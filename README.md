@@ -2,12 +2,11 @@
 
 Inclui:
 - Login (Admin vs Usuário) com JWT
-- Produtos com setor: **Expediente / Escritorio / Limpeza**
+- Produtos com setor: **Expediente / Escritorio / Limpeza / Copa. (Pode ser alterado)** 
 - Alerta automático quando **Qtd ≤ Mínimo**
 - Entradas (Admin) e Saídas (Usuário)
-- Relatórios (Admin): CSV/PDF
+- Relatórios (Admin): PDF
 - **Layout profissional** + **logo na página**
-- Pasta `mockups/` com imagens de como fica
 
 ## Rodar local (VSCode)
 
@@ -39,10 +38,6 @@ cd frontend
 npm install
 npm run dev
 ```
-
-Logins:
-- Admin: `admin / admin123`
-- Usuário: `user / user123`
 
 ## Deploy online (Render + Netlify)
 
