@@ -2,7 +2,7 @@
 
 Inclui:
 - Login (Admin vs Usuário) com JWT
-- Produtos com setor: **Expediente / Escritorio / Limpeza / Copa. (Pode ser alterado)** 
+- Produtos com setor: **Expediente / Escritorio / Limpeza / Copa** 
 - Alerta automático quando **Qtd ≤ Mínimo**
 - Entradas (Admin) e Saídas (Usuário)
 - Relatórios (Admin): PDF
