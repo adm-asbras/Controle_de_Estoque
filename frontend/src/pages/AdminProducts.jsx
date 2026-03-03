@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { api } from "../api";
 
 const SECTORS = ["Expediente", "Escritorio", "Limpeza", "Copa"];
@@ -91,7 +91,7 @@ export default function AdminProducts() {
         }
       `}</style>
 
-      <h2 className="page-title">• Produtos</h2>
+      <h2 className="page-title">Produtos</h2>
       {error && <p style={{ color: "var(--danger)" }}>{error}</p>}
 
       <div className="grid two">
@@ -148,7 +148,7 @@ export default function AdminProducts() {
 
             <button>Criar</button>
             <div className="small">
-              O sistema alerta automaticamente quando <b>Qtd ≤ Mínimo</b>.
+              O sistema alerta automaticamente quando <b>Qtd {"<="} Mínimo</b>.
             </div>
           </form>
         </div>
@@ -157,13 +157,13 @@ export default function AdminProducts() {
           <h3 style={{ marginTop: 0 }}>Exemplos de Categoria</h3>
           <ul className="small" style={{ marginTop: 0, lineHeight: 1.7 }}>
             <li>
-              <b>Caneta</b> → Escritorio
+              <b>Caneta</b> - Escritorio
             </li>
             <li>
-              <b>Papel A4</b> → Expediente
+              <b>Papel A4</b> - Expediente
             </li>
             <li>
-              <b>Detergente</b> → Limpeza
+              <b>Detergente</b> - Limpeza
             </li>
           </ul>
           <div className="small">
@@ -173,7 +173,7 @@ export default function AdminProducts() {
         </div>
       </div>
 
-      {/* ✅ CARROSSEL (TRAVADO DENTRO DO CARD) */}
+      {/* Carrossel de produtos para repor */}
       {restockItems.length > 0 && (
         <div
           className="card"
@@ -181,10 +181,10 @@ export default function AdminProducts() {
             padding: 16,
             marginTop: 14,
             borderLeft: "4px solid var(--danger)",
-            overflow: "hidden" // ✅ impede vazar do card
+            overflow: "hidden" // impede vazar do card
           }}
         >
-          <h3 style={{ marginTop: 0, color: "var(--danger)" }}>⚠️ Produtos para Repor</h3>
+          <h3 style={{ marginTop: 0, color: "var(--danger)" }}>Produtos para Repor</h3>
 
           {/* área visível */}
           <div style={{ overflow: "hidden", width: "100%" }}>
@@ -216,7 +216,7 @@ export default function AdminProducts() {
                   <div>
                     <div style={{ fontWeight: 800, marginBottom: 4 }}>{p.name}</div>
                     <div className="small" style={{ marginBottom: 4 }}>
-                      {p.sector} • {p.unit}
+                      {p.sector} - {p.unit}
                     </div>
                     <div className="small">
                       <span style={{ color: "var(--danger)" }}>

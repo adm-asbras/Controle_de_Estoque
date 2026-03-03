@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { api } from "../api";
 import { auth } from "../auth";
 import { useNavigate, Link } from "react-router-dom";
@@ -33,7 +33,7 @@ export default function Login() {
             <img src={logo} alt="ASBRAS" style={{ width: 100, height: 100, borderRadius: 14 }} />
             <div>
               <h1 style={{ margin: 0 }}>Controle de Estoque</h1>
-              <div className="small">Controle de entradas, saidas, minimo em estoque e relatorio para acompanhamento</div>
+              <div className="small">Controle de entradas, saídas, mínimo em estoque e relatório para acompanhamento</div>
             </div>
           </div>
 
@@ -42,9 +42,9 @@ export default function Login() {
           </p>
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
-            <span className="badge ok">Alerta de reposição</span>
-            <span className="badge">Categorias</span>
-            <span className="badge">Relatórios PDF</span>
+            <span className="badge ok">{"\u26A0\uFE0F"} Alerta de reposição</span>
+            <span className="badge">{"\u{1F4DA}"} Categorias</span>
+            <span className="badge">{"\u{1F4C4}"} Relatórios PDF</span>
           </div>
         </div>
 

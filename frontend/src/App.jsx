@@ -16,63 +16,68 @@ import UserExits from "./pages/UserExits";
 export default function App() {
   return (
     <BrowserRouter>
-      {/* Barra superior fixa para navegacao e sessao. */}
-      <Nav />
-      <Routes>
-        {/* Redireciona raiz para pagina de login. */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+      <div className="app-shell">
+        {/* Barra superior fixa para navegacao e sessao. */}
+        <Nav />
+        <main className="app-main">
+          <Routes>
+            {/* Redireciona raiz para pagina de login. */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* Rotas publicas. */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+            {/* Rotas publicas. */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* Rotas privadas de administrador. */}
-        <Route
-          path="/admin/produtos"
-          element={
-            <ProtectedRoute role="admin">
-              <AdminProducts />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/entradas"
-          element={
-            <ProtectedRoute role="admin">
-              <AdminEntries />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/relatorios"
-          element={
-            <ProtectedRoute role="admin">
-              <AdminReports />
-            </ProtectedRoute>
-          }
-        />
+            {/* Rotas privadas de administrador. */}
+            <Route
+              path="/admin/produtos"
+              element={
+                <ProtectedRoute role="admin">
+                  <AdminProducts />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/entradas"
+              element={
+                <ProtectedRoute role="admin">
+                  <AdminEntries />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/relatorios"
+              element={
+                <ProtectedRoute role="admin">
+                  <AdminReports />
+                </ProtectedRoute>
+              }
+            />
 
-        {/* Rota privada de usuario autenticado. */}
-        <Route
-          path="/usuario/saidas"
-          element={
-            <ProtectedRoute>
-              <UserExits />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/trocar-senha"
-          element={
-            <ProtectedRoute>
-              <ChangePassword />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
+            {/* Rota privada de usuario autenticado. */}
+            <Route
+              path="/usuario/saidas"
+              element={
+                <ProtectedRoute>
+                  <UserExits />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/trocar-senha"
+              element={
+                <ProtectedRoute>
+                  <ChangePassword />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </main>
+        <footer className="app-footer">© Todos os direitos reservados.</footer>
+      </div>
     </BrowserRouter>
   );
 }

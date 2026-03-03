@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { api } from "../api";
 
 // Retorna data local em formato compativel com input date.
@@ -58,7 +58,7 @@ export default function AdminEntries() {
 
   return (
     <div className="container" style={{ padding: "16px 0" }}>
-      <h2 className="page-title">• Entradas</h2>
+      <h2 className="page-title">Entradas</h2>
       {error && <p style={{ color: "var(--danger)" }}>{error}</p>}
 
       <div className="grid two">

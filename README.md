@@ -52,3 +52,22 @@ npm run dev
 ## Deploy
 - Configure variaveis de ambiente do backend com os mesmos nomes do `.env.example`.
 - Em producao, use `NODE_ENV=production` para cookie `Secure`.
+
+### Railway (backend)
+1. Crie um novo projeto no Railway apontando para este repositorio.
+2. O deploy usa o arquivo `nixpacks.toml` da raiz (instala e inicia o backend em `backend/`).
+3. Configure as variaveis de ambiente no servico Railway:
+   - `MONGO_URI`
+   - `JWT_SECRET`
+   - `NODE_ENV=production`
+   - `CORS_ORIGIN=https://controlesto.netlify.app` (pode incluir outras origens separadas por virgula)
+   - `FRONTEND_URL=https://controlesto.netlify.app`
+   - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
+4. Faca deploy e valide:
+   - `GET /health` deve responder `{ "ok": true }`
+   - login no frontend deve funcionar sem erro de CORS.
+
+### Netlify (frontend)
+- Em `Site settings > Environment variables`, configure:
+  - `VITE_API_URL=https://SEU-BACKEND.up.railway.app`
+- Depois, faca novo deploy do frontend.

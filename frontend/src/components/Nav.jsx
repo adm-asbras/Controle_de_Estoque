@@ -1,4 +1,4 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+﻿import { Link, NavLink, useNavigate } from "react-router-dom";
 import { auth } from "../auth";
 import { api } from "../api";
 import logo from "../assets/logo.avif";
@@ -34,8 +34,8 @@ export default function Nav() {
           <div className="nav-left">
             <img src={logo} alt="ASBRAS" className="brand-logo" style={{ width: 45, height: 45 }} />
             <div className="brand-text">
-              <div className="title">ContEst</div>
-              <div className="subtitle">Controle de Estoque</div>
+              <div className="title">ASBRAS</div>
+              <div className="subtitle">Associação Brasileira de Atenção à Assistência em Saúde</div>
             </div>
           </div>
 
@@ -52,7 +52,7 @@ export default function Nav() {
           <div className="nav-right">
             {logged && (
               <div className="rightbox">
-                <a href={docsUrl} target="_blank" rel="noopener noreferrer" className="navlink">Documentacao</a>
+                <a href={docsUrl} target="_blank" rel="noopener noreferrer" className="navlink">Documentação</a>
                 <Link to="/trocar-senha" className="navlink">Trocar senha</Link>
                 <span className="badge">{roleLabel}</span>
                 <span><b>{userLabel}</b></span>

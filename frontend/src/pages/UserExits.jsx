@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { api } from "../api";
 import { auth } from "../auth";
 
@@ -74,7 +74,7 @@ export default function UserExits() {
 
   return (
     <div className="container" style={{ padding: "16px 0" }}>
-      <h2 className="page-title">• Saídas</h2>
+      <h2 className="page-title">Saídas</h2>
       {error && <p style={{ color: "var(--danger)" }}>{error}</p>}
 
       <div className="card" style={{ padding: 16, marginBottom: 14 }}>

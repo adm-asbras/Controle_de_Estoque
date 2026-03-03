@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { downloadFile } from "../api";
 
 // Formata datas para exibicao no filtro de periodo.
@@ -31,7 +31,7 @@ export default function AdminReports() {
 
   return (
     <div className="container" style={{ padding: "16px 0" }}>
-      <h2 className="page-title">• Relatórios</h2>
+      <h2 className="page-title">Relatórios</h2>
       {error && <p style={{ color: "var(--danger)" }}>{error}</p>}
 
       <div className="grid two">
