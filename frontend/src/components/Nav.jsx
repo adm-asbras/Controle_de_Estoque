@@ -50,8 +50,8 @@ export default function Nav() {
           <div className="nav-right">
             {logged && (
               <div className="rightbox">
-                <span className="badge">{role.toUpperCase()}</span>
                 <a href={docsUrl} target="_blank" rel="noopener noreferrer" className="navlink">Documentação</a>
+                <span className="badge">{role.toUpperCase()}</span>
                 <span><b>{user}</b></span>
                 <Link to="/trocar-senha" className="navlink">Trocar senha</Link>
                 <button className="secondary" onClick={logout}>Sair</button>
