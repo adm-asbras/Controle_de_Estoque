@@ -9,6 +9,7 @@ export default function Nav() {
   const logged = auth.isLogged();
   const role = auth.getRole();
   const user = auth.getUsername();
+  const docsUrl = `${import.meta.env.VITE_API_URL}/docs`;
 
   // Faz logout no backend e limpa sessao local.
   async function logout() {
@@ -51,6 +52,7 @@ export default function Nav() {
               <div className="rightbox">
                 <span className="badge">{role.toUpperCase()}</span>
                 <span><b>{user}</b></span>
+                <a href={docsUrl} target="_blank" rel="noopener noreferrer" className="navlink">Documentação</a>
                 <Link to="/trocar-senha" className="navlink">Trocar senha</Link>
                 <button className="secondary" onClick={logout}>Sair</button>
               </div>

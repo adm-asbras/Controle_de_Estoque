@@ -4,6 +4,8 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
+const fs = require("fs");
+const path = require("path");
 const { connectDB } = require("./db");
 const { getAllowedOrigins } = require("./utils/security");
 const { rejectNoSqlOperators } = require("./middleware/request-security");
@@ -67,6 +69,31 @@ app.use("/api/auth/change-password", passwordRecoveryRateLimit);
 
 // Healthcheck para monitoramento do servico.
 app.get("/health", (req, res) => res.json({ ok: true }));
+
+// Exibe e serve arquivos da pasta de documentacao.
+const docsDirCandidates = ["Documentacao", "Documentação"].map((folder) =>
+  path.resolve(__dirname, "..", "..", folder)
+);
+const docsDir = docsDirCandidates.find((folder) => fs.existsSync(folder)) || docsDirCandidates[0];
+app.use("/docs", express.static(docsDir));
+app.get("/docs", (req, res) => {
+  if (!fs.existsSync(docsDir)) {
+    return res.status(404).send("Pasta de documentação nao encontrada.");
+  }
+
+  const files = fs
+    .readdirSync(docsDir, { withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => entry.name);
+
+  const links = files
+    .map((file) => `<li><a href="/docs/${encodeURIComponent(file)}" target="_blank" rel="noopener noreferrer">${file}</a></li>`)
+    .join("");
+
+  return res
+    .type("html")
+    .send(`<!doctype html><html><head><meta charset="utf-8"><title>Documentação</title></head><body><h1>Documentação</h1><ul>${links || "<li>Nenhum arquivo encontrado.</li>"}</ul></body></html>`);
+});
 
 // Monta rotas da API.
 app.use("/api/auth", authRoutes);
