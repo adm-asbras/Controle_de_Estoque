@@ -31,7 +31,7 @@ export default function AdminReports() {
 
   return (
     <div className="container" style={{ padding: "16px 0" }}>
-      <h2 className="page-title">Relatorios</h2>
+      <h2 className="page-title">• Relatorios</h2>
       {error && <p style={{ color: "var(--danger)" }}>{error}</p>}
 
       <div className="grid two">

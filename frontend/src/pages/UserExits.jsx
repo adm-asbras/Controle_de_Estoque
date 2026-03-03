@@ -74,13 +74,13 @@ export default function UserExits() {
 
   return (
     <div className="container" style={{ padding: "16px 0" }}>
-      <h2 className="page-title">Usuario - Saidas</h2>
+      <h2 className="page-title">• Saídas</h2>
       {error && <p style={{ color: "var(--danger)" }}>{error}</p>}
 
       <div className="card" style={{ padding: 16, marginBottom: 14 }}>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <div className="small">Setor</div>
+            <div className="small">Categoria</div>
             <select value={sector} onChange={(e) => setSector(e.target.value)}>
               {SECTORS.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
