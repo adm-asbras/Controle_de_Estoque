@@ -1,6 +1,14 @@
 import { auth } from "./auth";
 
-const BASE = import.meta.env.VITE_API_URL;
+const API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+
+function buildUrl(path) {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  if (API_URL.endsWith("/api") && normalizedPath.startsWith("/api/")) {
+    return `${API_URL}${normalizedPath.slice(4)}`;
+  }
+  return `${API_URL}${normalizedPath}`;
+}
 
 // Wrapper padrao de fetch para JSON + Bearer token.
 async function request(path, options = {}) {
@@ -11,8 +19,9 @@ async function request(path, options = {}) {
     ...(options.headers || {})
   };
 
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await fetch(buildUrl(path), {
     ...options,
+    credentials: "include",
     headers
   });
 
@@ -48,7 +57,8 @@ export const api = {
 // Download de arquivos binarios (PDF/CSV) com token de sessao.
 export async function downloadFile(path, filename) {
   const token = auth.getToken();
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await fetch(buildUrl(path), {
+    credentials: "include",
     headers: token ? { Authorization: `Bearer ${token}` } : {}
   });
   if (!res.ok) {
