@@ -1,6 +1,6 @@
 # Controle de Estoque
 
-Sistema com autenticao, controle de produtos, entradas, saidas e relatorios CSV/PDF.
+Sistema com autenticao, controle de produtos, entradas, saidas e relatorios PDF.
 
 ## Requisitos
 - Node.js 18+

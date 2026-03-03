@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
-import logo from "../assets/logo.png";
+import logo from "../assets/logo.avif";
 
 // Tela para solicitar link de redefinicao de senha por email.
 export default function ForgotPassword() {

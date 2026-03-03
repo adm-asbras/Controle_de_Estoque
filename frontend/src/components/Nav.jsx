@@ -1,7 +1,7 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import { auth } from "../auth";
 import { api } from "../api";
-import logo from "../assets/logo.png";
+import logo from "../assets/logo.avif";
 
 // Cabecalho global com navegacao por perfil.
 export default function Nav() {
@@ -9,6 +9,8 @@ export default function Nav() {
   const logged = auth.isLogged();
   const role = auth.getRole();
   const user = auth.getUsername();
+  const roleLabel = (role || "user").toUpperCase();
+  const userLabel = user || "-";
   const docsUrl = `${import.meta.env.VITE_API_URL}/docs`;
 
   // Faz logout no backend e limpa sessao local.
@@ -42,7 +44,7 @@ export default function Nav() {
               <>
                 <NavLink to="/admin/produtos" className={cls}>Produtos</NavLink>
                 <NavLink to="/admin/entradas" className={cls}>Entradas</NavLink>
-                <NavLink to="/admin/relatorios" className={cls}>Relatórios</NavLink>
+                <NavLink to="/admin/relatorios" className={cls}>Relatorios</NavLink>
               </>
             )}
           </div>
@@ -50,10 +52,10 @@ export default function Nav() {
           <div className="nav-right">
             {logged && (
               <div className="rightbox">
-                <a href={docsUrl} target="_blank" rel="noopener noreferrer" className="navlink">Documentação</a>
+                <a href={docsUrl} target="_blank" rel="noopener noreferrer" className="navlink">Documentacao</a>
                 <Link to="/trocar-senha" className="navlink">Trocar senha</Link>
-                <span className="badge">{role.toUpperCase()}</span>
-                <span><b>{user}</b></span>
+                <span className="badge">{roleLabel}</span>
+                <span><b>{userLabel}</b></span>
                 <button className="secondary" onClick={logout}>Sair</button>
               </div>
             )}

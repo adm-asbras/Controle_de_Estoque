@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { api } from "../api";
-import logo from "../assets/logo.png";
+import logo from "../assets/logo.avif";
 
 // Tela de cadastro de novos usuarios.
 export default function Register() {

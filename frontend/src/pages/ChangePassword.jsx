@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api";
 import { auth } from "../auth";
-import logo from "../assets/logo.png";
+import logo from "../assets/logo.avif";
 
 // Tela de troca de senha para usuario autenticado.
 export default function ChangePassword() {

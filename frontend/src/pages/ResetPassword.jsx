@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { api } from "../api";
-import logo from "../assets/logo.png";
+import logo from "../assets/logo.avif";
 
 // Tela de redefinicao de senha acessada por token no link de email.
 export default function ResetPassword() {
