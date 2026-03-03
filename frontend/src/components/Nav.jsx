@@ -51,9 +51,9 @@ export default function Nav() {
             {logged && (
               <div className="rightbox">
                 <a href={docsUrl} target="_blank" rel="noopener noreferrer" className="navlink">Documentação</a>
+                <Link to="/trocar-senha" className="navlink">Trocar senha</Link>
                 <span className="badge">{role.toUpperCase()}</span>
                 <span><b>{user}</b></span>
-                <Link to="/trocar-senha" className="navlink">Trocar senha</Link>
                 <button className="secondary" onClick={logout}>Sair</button>
               </div>
             )}
