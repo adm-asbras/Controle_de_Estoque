@@ -6,14 +6,22 @@ function createTransport() {
   const port = Number(process.env.SMTP_PORT || 587);
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
+  const secureOverride = process.env.SMTP_SECURE;
+  const forceIpv4 = String(process.env.SMTP_FORCE_IPV4 || "").toLowerCase() === "true";
 
   if (!host || !port || !user || !pass) return null;
+
+  const secure =
+    typeof secureOverride === "string" && secureOverride.length
+      ? secureOverride.toLowerCase() === "true"
+      : port === 465;
 
   return nodemailer.createTransport({
     host,
     port,
-    secure: port === 465,
+    secure,
     auth: { user, pass },
+    ...(forceIpv4 ? { family: 4 } : {}),
     connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT_MS || 8000),
     greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT_MS || 8000),
     socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT_MS || 12000)
