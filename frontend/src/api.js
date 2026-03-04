@@ -1,6 +1,15 @@
-import { auth } from "./auth";
+﻿import { auth } from "./auth";
 
-const API_URL = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+const rawApiUrl = (import.meta.env.VITE_API_URL || "").trim();
+
+function normalizeApiUrl(value) {
+  if (!value) return "";
+  if (/^https?:\/\//i.test(value)) return value.replace(/\/+$/, "");
+  if (/^localhost(?::\d+)?$/i.test(value)) return `http://${value}`;
+  return `https://${value}`;
+}
+
+const API_URL = normalizeApiUrl(rawApiUrl);
 
 function buildUrl(path) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
@@ -75,3 +84,4 @@ export async function downloadFile(path, filename) {
   a.remove();
   URL.revokeObjectURL(url);
 }
+
