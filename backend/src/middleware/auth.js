@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const { parseCookies } = require("../utils/security");
+const ADMIN_ROLES = new Set(["admin", "admin_limited"]);
 
 // Valida token JWT (Bearer ou cookie) e injeta usuario em req.user.
 function requireAuth(req, res, next) {
@@ -21,10 +22,18 @@ function requireAuth(req, res, next) {
 
 // Restringe acesso para perfil administrador.
 function requireAdmin(req, res, next) {
-  if (req.user?.role !== "admin") {
+  if (!ADMIN_ROLES.has(req.user?.role)) {
     return res.status(403).json({ error: "Acesso restrito a admin" });
   }
   next();
 }
 
-module.exports = { requireAuth, requireAdmin };
+// Restringe acesso para admin que pode gerenciar contas.
+function requireAccountManager(req, res, next) {
+  if (req.user?.role !== "admin") {
+    return res.status(403).json({ error: "Acesso restrito a gestor de contas" });
+  }
+  next();
+}
+
+module.exports = { requireAuth, requireAdmin, requireAccountManager, ADMIN_ROLES };

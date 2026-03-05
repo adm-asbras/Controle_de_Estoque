@@ -7,6 +7,8 @@ const EntrySchema = new mongoose.Schema(
     product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
     // Quantidade adicionada.
     qty: { type: Number, required: true, min: 1 },
+    // Usuario que lancou a entrada.
+    createdBy: { type: String, required: true, trim: true },
     // Data de referencia da movimentacao.
     date: { type: Date, required: true }
   },

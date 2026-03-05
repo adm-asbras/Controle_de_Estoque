@@ -18,7 +18,7 @@ export default function Login() {
     try {
       const data = await api.login({ username, password });
       auth.saveSession(data);
-      if (data.role === "admin") navigate("/admin/produtos");
+      if (data.role === "admin" || data.role === "admin_limited") navigate("/admin/produtos");
       else navigate("/usuario/saidas");
     } catch (err) {
       setError(err.message);
@@ -60,12 +60,6 @@ export default function Login() {
           </form>
 
           <div style={{ marginTop: 14, textAlign: "center" }}>
-            <div className="small" style={{ marginBottom: 8 }}>
-              Não tem conta?{" "}
-              <Link to="/register" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 700 }}>
-                Cadastre-se
-              </Link>
-            </div>
             <div className="small">
               Esqueceu a senha?{" "}
               <Link to="/forgot-password" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 700 }}>

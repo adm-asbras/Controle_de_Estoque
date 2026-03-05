@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from "react";
 import { api } from "../api";
 
-const SECTORS = ["Expediente", "Escritorio", "Limpeza", "Copa"];
+const SECTORS = ["Expediente", "Escritório", "Limpeza", "Copa"];
 const UNITS = ["Un", "Pct", "Ltr", "Cx"];
 
 // Tela administrativa de cadastro e manutencao de produtos.
@@ -11,8 +11,7 @@ export default function AdminProducts() {
     name: "",
     sector: "Expediente",
     unit: "Un",
-    minQty: 0,
-    qty: 0
+    minQty: 0
   });
   const [error, setError] = useState("");
 
@@ -39,10 +38,9 @@ export default function AdminProducts() {
         name: form.name,
         sector: form.sector,
         unit: form.unit,
-        minQty: Number(form.minQty),
-        qty: Number(form.qty)
+        minQty: Number(form.minQty)
       });
-      setForm({ name: "", sector: "Expediente", unit: "Un", minQty: 0, qty: 0 });
+      setForm({ name: "", sector: "Expediente", unit: "Un", minQty: 0 });
       await load();
     } catch (e) {
       setError(e.message);
@@ -76,7 +74,7 @@ export default function AdminProducts() {
   const restockTrackItems = shouldLoopRestock ? [...restockItems, ...restockItems] : restockItems;
 
   return (
-    <div className="container" style={{ padding: "16px 0" }}>
+    <div className="container" style={{ paddingTop: 16, paddingBottom: 16 }}>
       <style>{`
         @keyframes carouselScroll {
           0% { transform: translateX(0); }
@@ -121,7 +119,7 @@ export default function AdminProducts() {
             </select>
 
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <div style={{ flex: 1, minWidth: "150px" }}>
+              <div style={{ flex: 1, minWidth: "150px", maxWidth: "260px" }}>
                 <div className="small" style={{ marginBottom: 4 }}>
                   Qtd Mínima
                 </div>
@@ -129,20 +127,8 @@ export default function AdminProducts() {
                   type="number"
                   placeholder="0"
                   value={form.minQty}
-                  onChange={(e) => setForm({ ...form, minQty: e.target.value })}
-                />
-              </div>
-
-              <div style={{ flex: 2, minWidth: "150px" }}>
-                <div className="small" style={{ marginBottom: 4 }}>
-                  Qtd Inicial
-                </div>
-                <input
-                  type="number"
-                  placeholder="0"
-                  value={form.qty}
-                  onChange={(e) => setForm({ ...form, qty: e.target.value })}
-                />
+                    onChange={(e) => setForm({ ...form, minQty: e.target.value })}
+                  />
               </div>
             </div>
 
@@ -157,7 +143,7 @@ export default function AdminProducts() {
           <h3 style={{ marginTop: 0 }}>Exemplos de Categoria</h3>
           <ul className="small" style={{ marginTop: 0, lineHeight: 1.7 }}>
             <li>
-              <b>Caneta</b> - Escritorio
+               <b>Caneta</b> - Escritório
             </li>
             <li>
               <b>Papel A4</b> - Expediente
@@ -209,7 +195,7 @@ export default function AdminProducts() {
                     display: "flex",
                     justifyContent: "space-between",
                     alignItems: "center",
-                    minWidth: 280,
+                    minWidth: "min(280px, 86vw)",
                     flexShrink: 0
                   }}
                 >

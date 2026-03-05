@@ -13,8 +13,8 @@ const UserSchema = new mongoose.Schema(
     passwordResetTokenHash: { type: String, default: null },
     // Data de expiracao do token de recuperacao.
     passwordResetExpiresAt: { type: Date, default: null },
-    // Controle de autorizacao: admin ou user.
-    role: { type: String, enum: ["admin", "user"], required: true, default: "user" }
+    // Controle de autorizacao: admin gestor de contas, admin operacional ou user.
+    role: { type: String, enum: ["admin", "admin_limited", "user"], required: true, default: "user" }
   },
   // createdAt e updatedAt automaticos.
   { timestamps: true }

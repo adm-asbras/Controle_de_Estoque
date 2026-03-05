@@ -31,7 +31,13 @@ export default function ProtectedRoute({ role, children }) {
   if (status === "checking") return null;
   // Sem sessao valida, volta para login.
   if (status === "denied") return <Navigate to="/login" replace />;
-  // Se a rota exige role, confirma permissao.
-  if (role && auth.getRole() !== role) return <Navigate to="/login" replace />;
+  // Se a rota exige role/roles, confirma permissao.
+  const currentRole = auth.getRole();
+  if (Array.isArray(role) && role.length > 0 && !role.includes(currentRole)) {
+    return <Navigate to="/login" replace />;
+  }
+  if (typeof role === "string" && role && currentRole !== role) {
+    return <Navigate to="/login" replace />;
+  }
   return children;
 }

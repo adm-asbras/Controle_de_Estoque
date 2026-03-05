@@ -9,7 +9,8 @@ const router = express.Router();
 
 // Lista saidas: admin ve todas, usuario ve apenas as proprias.
 router.get("/", requireAuth, async (req, res) => {
-  const filter = req.user.role === "admin" ? {} : { takenBy: req.user.username };
+  const isAdmin = req.user.role === "admin";
+  const filter = isAdmin ? {} : { takenBy: req.user.username };
   const exits = await Exit.find(filter).populate("product").sort({ date: -1, createdAt: -1 });
   res.json(exits);
 });

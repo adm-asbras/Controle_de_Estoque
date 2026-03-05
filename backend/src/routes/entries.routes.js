@@ -27,6 +27,7 @@ router.post("/", requireAuth, requireAdmin, async (req, res) => {
   const entry = await Entry.create({
     product: product._id,
     qty: validated.qty,
+    createdBy: req.user.username,
     date: validated.date
   });
   const populated = await Entry.findById(entry._id).populate("product");

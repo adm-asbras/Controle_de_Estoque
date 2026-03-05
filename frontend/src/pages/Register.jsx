@@ -27,7 +27,7 @@ export default function Register() {
     }
 
     if (form.password !== form.confirmPassword) {
-      setError("As senhas nao conferem");
+      setError("As senhas não conferem");
       return;
     }
 
@@ -98,7 +98,7 @@ export default function Register() {
           </form>
 
           <div style={{ marginTop: 14, textAlign: "center" }} className="small">
-            Ja tem conta?{" "}
+            Já tem conta?{" "}
             <Link to="/login" style={{ color: "var(--accent)", textDecoration: "none", fontWeight: 700 }}>
               Faça login
             </Link>

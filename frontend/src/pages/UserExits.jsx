@@ -110,7 +110,7 @@ export default function UserExits() {
             <div className="small">Retirado por: <b>{username}</b></div>
 
             <textarea
-              placeholder="Observacao (opcional)"
+              placeholder="Observação (opcional)"
               value={form.observation}
               onChange={(e) => setForm({ ...form, observation: e.target.value })}
               rows={3}

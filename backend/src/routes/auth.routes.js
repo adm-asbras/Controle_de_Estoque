@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-const { requireAuth } = require("../middleware/auth");
+const { requireAuth, requireAccountManager } = require("../middleware/auth");
 const { auditLog } = require("../utils/audit");
 const { authCookieOptions, clearAuthCookieOptions } = require("../utils/security");
 const { sanitizeText, validateCredentials } = require("../utils/validation");
@@ -51,10 +51,16 @@ router.post("/login", async (req, res) => {
   res.json({ token, role: user.role, username: user.username });
 });
 
-// Cadastro de usuario comum (role sempre "user").
+// Cadastro publico desativado por seguranca.
 router.post("/register", async (req, res) => {
+  auditLog(req, "auth.register.blocked_public");
+  return res.status(403).json({ message: "Cadastro publico desativado. Solicite criacao ao administrador." });
+});
+
+// Cadastro de usuario por admin gestor de contas.
+router.post("/admin/users", requireAuth, requireAccountManager, async (req, res) => {
   try {
-    const { username, password, email } = req.body || {};
+    const { username, password, email, role } = req.body || {};
     if (!username || !password || !email) {
       return res.status(400).json({ message: "username, password e email obrigatorios" });
     }
@@ -64,6 +70,7 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: validated.error });
     }
 
+    const normalizedRole = ["admin", "admin_limited", "user"].includes(role) ? role : "user";
     const existingUser = await User.findOne({
       $or: [{ username: validated.username }, { email: validated.email }]
     });
@@ -76,24 +83,94 @@ router.post("/register", async (req, res) => {
       username: validated.username,
       email: validated.email,
       passwordHash,
-      role: "user"
+      role: normalizedRole
     });
-
     await user.save();
 
-    const token = signUserToken(user);
-    res.cookie("access_token", token, authCookieOptions());
-    auditLog(req, "auth.register.success", { username: user.username });
+    auditLog(req, "auth.admin_user_created", {
+      createdUserId: user._id.toString(),
+      createdUsername: user.username,
+      createdRole: user.role
+    });
 
-    res.status(201).json({
-      token,
-      role: user.role,
+    return res.status(201).json({
+      id: user._id,
       username: user.username,
-      message: "Cadastro realizado com sucesso"
+      email: user.email,
+      role: user.role,
+      message: "Usuario criado com sucesso"
     });
   } catch (err) {
-    res.status(500).json({ message: "Erro ao cadastrar usuario" });
+    return res.status(500).json({ message: "Erro ao cadastrar usuario" });
   }
+});
+
+// Lista contas cadastradas para gestor de contas.
+router.get("/admin/users", requireAuth, requireAccountManager, async (req, res) => {
+  const users = await User.find({}, "username email role createdAt").sort({ createdAt: -1 }).lean();
+  return res.json(users);
+});
+
+// Atualiza perfil de acesso de uma conta (somente gestor de contas).
+router.put("/admin/users/:id/role", requireAuth, requireAccountManager, async (req, res) => {
+  const targetId = sanitizeText(req.params?.id, 40);
+  const nextRole = sanitizeText(req.body?.role, 32);
+  const allowedRoles = new Set(["user", "admin_limited", "admin"]);
+
+  if (!targetId || !allowedRoles.has(nextRole)) {
+    return res.status(400).json({ message: "role invalida" });
+  }
+  if (targetId === req.user.id) {
+    return res.status(400).json({ message: "Nao e permitido alterar seu proprio acesso" });
+  }
+
+  const target = await User.findById(targetId);
+  if (!target) return res.status(404).json({ message: "Usuario nao encontrado" });
+
+  // Evita perder o unico gestor de contas do sistema.
+  if (target.role === "admin" && nextRole !== "admin") {
+    const adminCount = await User.countDocuments({ role: "admin" });
+    if (adminCount <= 1) {
+      return res.status(400).json({ message: "Nao e permitido remover o ultimo gestor de contas" });
+    }
+  }
+
+  target.role = nextRole;
+  await target.save();
+  auditLog(req, "auth.admin_user_role_updated", {
+    targetUserId: target._id.toString(),
+    targetUsername: target.username,
+    role: target.role
+  });
+  return res.json({ id: target._id, username: target.username, role: target.role });
+});
+
+// Exclui conta (somente gestor de contas).
+router.delete("/admin/users/:id", requireAuth, requireAccountManager, async (req, res) => {
+  const targetId = sanitizeText(req.params?.id, 40);
+  if (!targetId) return res.status(400).json({ message: "id invalido" });
+  if (targetId === req.user.id) {
+    return res.status(400).json({ message: "Nao e permitido excluir sua propria conta" });
+  }
+
+  const target = await User.findById(targetId);
+  if (!target) return res.status(404).json({ message: "Usuario nao encontrado" });
+
+  // Evita excluir o unico gestor de contas do sistema.
+  if (target.role === "admin") {
+    const adminCount = await User.countDocuments({ role: "admin" });
+    if (adminCount <= 1) {
+      return res.status(400).json({ message: "Nao e permitido excluir o ultimo gestor de contas" });
+    }
+  }
+
+  await User.findByIdAndDelete(targetId);
+  auditLog(req, "auth.admin_user_deleted", {
+    targetUserId: target._id.toString(),
+    targetUsername: target.username,
+    targetRole: target.role
+  });
+  return res.status(204).send();
 });
 
 // Encerra sessao removendo cookie de acesso.

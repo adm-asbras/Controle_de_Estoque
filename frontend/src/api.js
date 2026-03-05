@@ -44,7 +44,10 @@ async function request(path, options = {}) {
 // Cliente de API consumido pelas telas.
 export const api = {
   login: (body) => request("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
-  register: (body) => request("/api/auth/register", { method: "POST", body: JSON.stringify(body) }),
+  adminCreateUser: (body) => request("/api/auth/admin/users", { method: "POST", body: JSON.stringify(body) }),
+  listUsers: () => request("/api/auth/admin/users"),
+  updateUserRole: (id, body) => request(`/api/auth/admin/users/${id}/role`, { method: "PUT", body: JSON.stringify(body) }),
+  deleteUser: (id) => request(`/api/auth/admin/users/${id}`, { method: "DELETE" }),
   forgotPassword: (body) => request("/api/auth/forgot-password", { method: "POST", body: JSON.stringify(body) }),
   resetPassword: (body) => request("/api/auth/reset-password", { method: "POST", body: JSON.stringify(body) }),
   changePassword: (body) => request("/api/auth/change-password", { method: "POST", body: JSON.stringify(body) }),

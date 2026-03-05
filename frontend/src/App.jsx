@@ -3,13 +3,13 @@ import Nav from "./components/Nav";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import Login from "./pages/Login";
-import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ChangePassword from "./pages/ChangePassword";
 import AdminProducts from "./pages/AdminProducts";
 import AdminEntries from "./pages/AdminEntries";
 import AdminReports from "./pages/AdminReports";
+import AdminUsers from "./pages/AdminUsers";
 import UserExits from "./pages/UserExits";
 
 // Define o roteamento principal da SPA.
@@ -26,7 +26,6 @@ export default function App() {
 
             {/* Rotas publicas. */}
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
 
@@ -34,7 +33,7 @@ export default function App() {
             <Route
               path="/admin/produtos"
               element={
-                <ProtectedRoute role="admin">
+                <ProtectedRoute role={["admin", "admin_limited"]}>
                   <AdminProducts />
                 </ProtectedRoute>
               }
@@ -42,15 +41,23 @@ export default function App() {
             <Route
               path="/admin/entradas"
               element={
-                <ProtectedRoute role="admin">
+                <ProtectedRoute role={["admin", "admin_limited"]}>
                   <AdminEntries />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/usuarios"
+              element={
+                <ProtectedRoute role="admin">
+                  <AdminUsers />
                 </ProtectedRoute>
               }
             />
             <Route
               path="/admin/relatorios"
               element={
-                <ProtectedRoute role="admin">
+                <ProtectedRoute role={["admin", "admin_limited"]}>
                   <AdminReports />
                 </ProtectedRoute>
               }
