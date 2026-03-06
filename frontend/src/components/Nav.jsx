@@ -1,4 +1,4 @@
-import { Link, NavLink, useNavigate } from "react-router-dom";
+﻿import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { auth } from "../auth";
 import { api } from "../api";
@@ -12,7 +12,12 @@ export default function Nav() {
   const isAccountManager = role === "admin";
   const isAdmin = role === "admin" || role === "admin_limited";
   const user = auth.getUsername();
-  const roleLabel = isAdmin ? "ADMIN" : "USUÁRIO";
+  const roleLabel =
+    role === "admin"
+      ? "ADMIN GESTOR"
+      : role === "admin_limited"
+      ? "ADMIN"
+      : "USUARIO";
   const userLabel = user || "-";
   const apiUrl = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
   const docsUrl = apiUrl ? `${apiUrl}/docs` : "/docs";
@@ -33,19 +38,19 @@ export default function Nav() {
   const cls = ({ isActive }) => "navlink" + (isActive ? " active" : "");
   const normalizeLabel = (label) =>
     ({
-      Saidas: "Saídas",
-      "Gestao de Contas": "Gestão de Contas",
-      Relatorios: "Relatórios"
+      Saidas: "SaÃ­das",
+      "Gestao de Contas": "GestÃ£o de Contas",
+      Relatorios: "RelatÃ³rios"
     }[label] || label);
   const links = isAdmin
     ? [
-        { to: "/admin/produtos", label: "Produtos", icon: "📦" },
-        { to: "/admin/entradas", label: "Entradas", icon: "📥" },
-        ...(role === "admin_limited" ? [{ to: "/usuario/saidas", label: "Saidas", icon: "📤" }] : []),
-        ...(isAccountManager ? [{ to: "/admin/usuarios", label: "Gestao de Contas", icon: "👥" }] : []),
-        { to: "/admin/relatorios", label: "Relatorios", icon: "📊" }
+        { to: "/admin/produtos", label: "Produtos", icon: "ðŸ“¦" },
+        { to: "/admin/entradas", label: "Entradas", icon: "ðŸ“¥" },
+        ...(role === "admin_limited" ? [{ to: "/usuario/saidas", label: "Saidas", icon: "ðŸ“¤" }] : []),
+        ...(isAccountManager ? [{ to: "/admin/usuarios", label: "Gestao de Contas", icon: "ðŸ‘¥" }] : []),
+        { to: "/admin/relatorios", label: "Relatorios", icon: "ðŸ“Š" }
       ]
-    : [{ to: "/usuario/saidas", label: "Saidas", icon: "📤" }];
+    : [{ to: "/usuario/saidas", label: "Saidas", icon: "ðŸ“¤" }];
 
   return (
     <>
@@ -55,7 +60,7 @@ export default function Nav() {
             <img src={logo} alt="ASBRAS" className="brand-logo" />
             <div className="brand-text">
               <div className="title">ASBRAS</div>
-              <div className="subtitle">Associação Brasileira de Atenção à Assistência em Saúde</div>
+              <div className="subtitle">AssociaÃ§Ã£o Brasileira de AtenÃ§Ã£o Ã  AssistÃªncia em SaÃºde</div>
             </div>
           </div>
 
@@ -68,7 +73,7 @@ export default function Nav() {
       <aside className="left-sidebar">
         <div className="sidebar-inner">
           <div className="sidebar-user">
-            <div className="session-user">👤 {userLabel}</div>
+            <div className="session-user">ðŸ‘¤ {userLabel}</div>
           </div>
 
           <div className="nav-section-title">Menu</div>
@@ -88,23 +93,23 @@ export default function Nav() {
               onClick={() => setShowExtraActions((v) => !v)}
               aria-expanded={showExtraActions}
               aria-controls="menu-extra-actions"
-              title={showExtraActions ? "Ocultar ações" : "Mostrar ações"}
+              title={showExtraActions ? "Ocultar aÃ§Ãµes" : "Mostrar aÃ§Ãµes"}
             >
-              {showExtraActions ? "⌄" : "›"}
+              {showExtraActions ? "âŒ„" : "â€º"}
             </button>
           </div>
 
           <div id="menu-extra-actions" className={`menu-actions ${showExtraActions ? "open" : "closed"}`}>
             <a href={docsUrl} target="_blank" rel="noopener noreferrer" className="action-link">
-              <span className="action-icon">📘</span>
-              <span>Documentação</span>
+              <span className="action-icon">ðŸ“˜</span>
+              <span>DocumentaÃ§Ã£o</span>
             </a>
             <Link to="/trocar-senha" className="action-link">
-              <span className="action-icon">🔐</span>
+              <span className="action-icon">ðŸ”</span>
               <span>Trocar senha</span>
             </Link>
             <button className="secondary logout-btn" onClick={logout}>
-              <span className="action-icon">🚪</span>
+              <span className="action-icon">ðŸšª</span>
               <span>Sair</span>
             </button>
           </div>
@@ -113,3 +118,5 @@ export default function Nav() {
     </>
   );
 }
+
+
