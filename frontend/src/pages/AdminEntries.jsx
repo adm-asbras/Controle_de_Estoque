@@ -1,21 +1,18 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 
-const SECTORS = ["Expediente", "Escritório", "Limpeza", "Copa"];
+const SECTORS = ["Expediente", "Escritorio", "Limpeza", "Copa"];
 
-// Retorna data local em formato compativel com input date.
 function getTodayLocalInputValue() {
   const now = new Date();
   const tzOffsetMs = now.getTimezoneOffset() * 60000;
   return new Date(now.getTime() - tzOffsetMs).toISOString().slice(0, 10);
 }
 
-// Formata datas de saida para exibicao pt-BR.
 function formatDateBR(date) {
   return new Date(date).toLocaleDateString("pt-BR", { timeZone: "UTC" });
 }
 
-// Tela administrativa para lancar entradas de estoque.
 export default function AdminEntries() {
   const [products, setProducts] = useState([]);
   const [entries, setEntries] = useState([]);
@@ -28,7 +25,6 @@ export default function AdminEntries() {
     date: getTodayLocalInputValue()
   });
 
-  // Carrega produtos por categoria e historico de entradas.
   async function load(selectedSector = form.sector) {
     setError("");
     try {
@@ -52,7 +48,6 @@ export default function AdminEntries() {
     load(form.sector);
   }, [form.sector]);
 
-  // Salva nova entrada e recarrega dados.
   async function create(e) {
     e.preventDefault();
     setError("");
@@ -75,7 +70,7 @@ export default function AdminEntries() {
 
       <div className="grid two">
         <div className="card" style={{ padding: 16 }}>
-          <h3 style={{ marginTop: 0 }}>Lançar entrada</h3>
+          <h3 style={{ marginTop: 0 }}>Lancar entrada</h3>
           <form onSubmit={create} style={{ display: "grid", gap: 10 }}>
             <select value={form.sector} onChange={(e) => setForm((f) => ({ ...f, sector: e.target.value, productId: "" }))}>
               {SECTORS.map((s) => (
@@ -110,7 +105,7 @@ export default function AdminEntries() {
               </div>
             </div>
 
-            <button>Lançar entrada</button>
+            <button>Lancar entrada</button>
             <div className="small">Entradas incrementam o estoque automaticamente.</div>
           </form>
         </div>
@@ -118,13 +113,13 @@ export default function AdminEntries() {
         <div className="card" style={{ padding: 16 }}>
           <h3 style={{ marginTop: 0 }}>Dica</h3>
           <p className="small" style={{ marginTop: 0 }}>
-            Selecione a categoria para facilitar a escolha do produto e manter o lançamento organizado.
+            Selecione a categoria para facilitar a escolha do produto e manter o lancamento organizado.
           </p>
         </div>
       </div>
 
       <div className="card" style={{ padding: 16, marginTop: 14 }}>
-        <h3 style={{ marginTop: 0 }}>Histórico de entradas</h3>
+        <h3 style={{ marginTop: 0 }}>Historico de entradas</h3>
         <table className="table">
           <thead>
             <tr>
@@ -133,7 +128,7 @@ export default function AdminEntries() {
               <th>Categoria</th>
               <th>Unidade</th>
               <th>Quantidade</th>
-              <th>Lançado por</th>
+              <th>Lancado por</th>
             </tr>
           </thead>
           <tbody>

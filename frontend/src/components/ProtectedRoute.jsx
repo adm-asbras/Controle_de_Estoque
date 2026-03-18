@@ -14,7 +14,7 @@ export default function ProtectedRoute({ role, children }) {
       .me()
       .then((session) => {
         if (!active) return;
-        auth.saveSession({ ...session, token: auth.getToken() });
+        auth.saveSession(session);
         setStatus("ok");
       })
       .catch(() => {

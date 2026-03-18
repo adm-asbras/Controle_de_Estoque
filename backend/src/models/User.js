@@ -20,4 +20,7 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Melhora listagens administrativas e buscas por perfil.
+UserSchema.index({ role: 1, createdAt: -1 });
+
 module.exports = mongoose.model("User", UserSchema);

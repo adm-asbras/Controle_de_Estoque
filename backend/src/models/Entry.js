@@ -16,4 +16,9 @@ const EntrySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Acelera consultas por produto e periodos em listagens/relatorios.
+EntrySchema.index({ date: -1, createdAt: -1 });
+EntrySchema.index({ product: 1, date: -1 });
+EntrySchema.index({ createdBy: 1, date: -1 });
+
 module.exports = mongoose.model("Entry", EntrySchema);

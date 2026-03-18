@@ -6,6 +6,7 @@ const User = require("../models/User");
 const { requireAuth, requireAccountManager } = require("../middleware/auth");
 const { auditLog } = require("../utils/audit");
 const { authCookieOptions, clearAuthCookieOptions } = require("../utils/security");
+const { asyncHandler } = require("../utils/async-handler");
 const { sanitizeText, validateCredentials } = require("../utils/validation");
 const { sendPasswordResetEmail } = require("../utils/email");
 
@@ -26,7 +27,7 @@ function hashResetToken(token) {
 }
 
 // Login com validacao de credenciais e emissao de cookie HttpOnly.
-router.post("/login", async (req, res) => {
+router.post("/login", asyncHandler(async (req, res) => {
   const username = sanitizeText(req.body?.username, 32);
   const password = req.body?.password;
   if (!username || !password) {
@@ -48,17 +49,17 @@ router.post("/login", async (req, res) => {
   const token = signUserToken(user);
   res.cookie("access_token", token, authCookieOptions());
   auditLog(req, "auth.login.success", { username: user.username, role: user.role });
-  res.json({ token, role: user.role, username: user.username });
-});
+  res.json({ role: user.role, username: user.username });
+}));
 
 // Cadastro publico desativado por seguranca.
-router.post("/register", async (req, res) => {
+router.post("/register", asyncHandler(async (req, res) => {
   auditLog(req, "auth.register.blocked_public");
   return res.status(403).json({ message: "Cadastro publico desativado. Solicite criacao ao administrador." });
-});
+}));
 
 // Cadastro de usuario por admin gestor de contas.
-router.post("/admin/users", requireAuth, requireAccountManager, async (req, res) => {
+router.post("/admin/users", requireAuth, requireAccountManager, asyncHandler(async (req, res) => {
   try {
     const { username, password, email, role } = req.body || {};
     if (!username || !password || !email) {
@@ -103,16 +104,16 @@ router.post("/admin/users", requireAuth, requireAccountManager, async (req, res)
   } catch (err) {
     return res.status(500).json({ message: "Erro ao cadastrar usuario" });
   }
-});
+}));
 
 // Lista contas cadastradas para gestor de contas.
-router.get("/admin/users", requireAuth, requireAccountManager, async (req, res) => {
+router.get("/admin/users", requireAuth, requireAccountManager, asyncHandler(async (req, res) => {
   const users = await User.find({}, "username email role createdAt").sort({ createdAt: -1 }).lean();
   return res.json(users);
-});
+}));
 
 // Atualiza perfil de acesso de uma conta (somente gestor de contas).
-router.put("/admin/users/:id/role", requireAuth, requireAccountManager, async (req, res) => {
+router.put("/admin/users/:id/role", requireAuth, requireAccountManager, asyncHandler(async (req, res) => {
   const targetId = sanitizeText(req.params?.id, 40);
   const nextRole = sanitizeText(req.body?.role, 32);
   const allowedRoles = new Set(["user", "admin_limited", "admin"]);
@@ -143,10 +144,10 @@ router.put("/admin/users/:id/role", requireAuth, requireAccountManager, async (r
     role: target.role
   });
   return res.json({ id: target._id, username: target.username, role: target.role });
-});
+}));
 
 // Exclui conta (somente gestor de contas).
-router.delete("/admin/users/:id", requireAuth, requireAccountManager, async (req, res) => {
+router.delete("/admin/users/:id", requireAuth, requireAccountManager, asyncHandler(async (req, res) => {
   const targetId = sanitizeText(req.params?.id, 40);
   if (!targetId) return res.status(400).json({ message: "id invalido" });
   if (targetId === req.user.id) {
@@ -171,7 +172,7 @@ router.delete("/admin/users/:id", requireAuth, requireAccountManager, async (req
     targetRole: target.role
   });
   return res.status(204).send();
-});
+}));
 
 // Encerra sessao removendo cookie de acesso.
 router.post("/logout", requireAuth, (req, res) => {
@@ -186,7 +187,7 @@ router.get("/me", requireAuth, (req, res) => {
 });
 
 // Permite trocar senha estando autenticado.
-router.post("/change-password", requireAuth, async (req, res) => {
+router.post("/change-password", requireAuth, asyncHandler(async (req, res) => {
   const currentPassword = req.body?.currentPassword || "";
   const newPassword = req.body?.newPassword || "";
 
@@ -220,10 +221,10 @@ router.post("/change-password", requireAuth, async (req, res) => {
 
   auditLog(req, "auth.change_password.success", { userId: req.user.id });
   return res.json({ message: "Senha alterada com sucesso" });
-});
+}));
 
 // Solicita recuperacao de senha via email cadastrado.
-router.post("/forgot-password", async (req, res) => {
+router.post("/forgot-password", asyncHandler(async (req, res) => {
   const email = sanitizeText(req.body?.email, 120).toLowerCase();
 
   // Resposta generica para nao revelar se email existe.
@@ -258,10 +259,10 @@ router.post("/forgot-password", async (req, res) => {
     });
 
   return res.json(genericOk);
-});
+}));
 
 // Redefine senha a partir de token temporario.
-router.post("/reset-password", async (req, res) => {
+router.post("/reset-password", asyncHandler(async (req, res) => {
   const token = sanitizeText(req.body?.token, 256);
   const newPassword = req.body?.newPassword || "";
 
@@ -290,6 +291,6 @@ router.post("/reset-password", async (req, res) => {
 
   auditLog(req, "auth.reset_password.success", { userId: user._id.toString() });
   return res.json({ message: "Senha redefinida com sucesso" });
-});
+}));
 
 module.exports = router;

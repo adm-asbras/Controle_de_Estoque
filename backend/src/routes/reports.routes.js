@@ -7,6 +7,7 @@ const Entry = require("../models/Entry");
 const Exit = require("../models/Exit");
 const { requireAuth, requireAdmin } = require("../middleware/auth");
 const { auditLog } = require("../utils/audit");
+const { asyncHandler } = require("../utils/async-handler");
 const { sanitizeText } = require("../utils/validation");
 
 const router = express.Router();
@@ -15,6 +16,18 @@ const router = express.Router();
 function parseDateOnly(dateStr) {
   if (typeof dateStr !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
   const [year, month, day] = dateStr.split("-").map(Number);
+  if (year < 2000 || year > 2100) return null;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+
+  const parsed = new Date(Date.UTC(year, month - 1, day, 12, 0, 0, 0));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
   return { year, month, day };
 }
 
@@ -38,6 +51,10 @@ function getDateFilterFromQuery(req, res) {
   const dateRange = getUtcRangeFromDateStrings(startDate, endDate);
   if (!dateRange) {
     res.status(400).json({ error: "startDate/endDate invalidas. Use YYYY-MM-DD" });
+    return null;
+  }
+  if (dateRange.$gte > dateRange.$lte) {
+    res.status(400).json({ error: "startDate nao pode ser maior que endDate" });
     return null;
   }
 
@@ -64,6 +81,10 @@ function parseMonthsFilterFromQuery(req, res) {
     .sort((a, b) => a - b);
   if (months.length === 0) {
     res.status(400).json({ error: "months invalido. Use valores de 1 a 12" });
+    return false;
+  }
+  if (months.length > 12) {
+    res.status(400).json({ error: "months invalido. Maximo de 12 meses" });
     return false;
   }
   return { year, months };
@@ -130,7 +151,7 @@ function renderCategorySummary(doc, rows) {
  * ADMIN ONLY
  * (Opcional) ?sector=Limpeza
  */
-router.get("/stock.csv", requireAuth, requireAdmin, async (req, res) => {
+router.get("/stock.csv", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
   const sector = sanitizeText(req.query?.sector || "", 20);
   const filter = sector ? { sector } : {};
 
@@ -151,10 +172,10 @@ router.get("/stock.csv", requireAuth, requireAdmin, async (req, res) => {
   res.setHeader("Content-Disposition", 'attachment; filename="estoque.csv"');
   auditLog(req, "report.stock.csv", { sector: sector || "all" });
   res.send(csv);
-});
+}));
 
 // Gera PDF de estoque atual.
-router.get("/stock.pdf", requireAuth, requireAdmin, async (req, res) => {
+router.get("/stock.pdf", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
   const sector = sanitizeText(req.query?.sector || "", 20);
   const filter = sector ? { sector } : {};
   const monthsFilter = parseMonthsFilterFromQuery(req, res);
@@ -273,10 +294,10 @@ router.get("/stock.pdf", requireAuth, requireAdmin, async (req, res) => {
   }
 
   doc.end();
-});
+}));
 
 // Gera PDF de entradas com filtro opcional por periodo.
-router.get("/entries.pdf", requireAuth, requireAdmin, async (req, res) => {
+router.get("/entries.pdf", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
   const monthsFilter = parseMonthsFilterFromQuery(req, res);
   if (monthsFilter === false) return;
   if (monthsFilter && (req.query?.startDate || req.query?.endDate)) {
@@ -363,10 +384,10 @@ router.get("/entries.pdf", requireAuth, requireAdmin, async (req, res) => {
   }
 
   doc.end();
-});
+}));
 
 // Gera PDF de saidas com filtro opcional por periodo.
-router.get("/exits.pdf", requireAuth, requireAdmin, async (req, res) => {
+router.get("/exits.pdf", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
   const monthsFilter = parseMonthsFilterFromQuery(req, res);
   if (monthsFilter === false) return;
   if (monthsFilter && (req.query?.startDate || req.query?.endDate)) {
@@ -459,10 +480,10 @@ router.get("/exits.pdf", requireAuth, requireAdmin, async (req, res) => {
   }
 
   doc.end();
-});
+}));
 
 // Gera CSV de entradas.
-router.get("/entries.csv", requireAuth, requireAdmin, async (req, res) => {
+router.get("/entries.csv", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
   const filter = getDateFilterFromQuery(req, res);
   if (filter === null) return;
 
@@ -485,10 +506,10 @@ router.get("/entries.csv", requireAuth, requireAdmin, async (req, res) => {
     endDate: req.query?.endDate || null
   });
   res.send(csv);
-});
+}));
 
 // Gera CSV de saidas.
-router.get("/exits.csv", requireAuth, requireAdmin, async (req, res) => {
+router.get("/exits.csv", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
   const filter = getDateFilterFromQuery(req, res);
   if (filter === null) return;
 
@@ -513,6 +534,16 @@ router.get("/exits.csv", requireAuth, requireAdmin, async (req, res) => {
     endDate: req.query?.endDate || null
   });
   res.send(csv);
-});
+}));
+
+router.__testables = {
+  parseDateOnly,
+  getUtcRangeFromDateStrings,
+  getDateFilterFromQuery,
+  parseMonthsFilterFromQuery,
+  getMonthsUtcRange,
+  isDateInMonthsFilter,
+  formatMonthsFilterLabel
+};
 
 module.exports = router;

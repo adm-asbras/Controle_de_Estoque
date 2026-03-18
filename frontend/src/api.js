@@ -19,12 +19,10 @@ function buildUrl(path) {
   return `${API_URL}${normalizedPath}`;
 }
 
-// Wrapper padrao de fetch para JSON + Bearer token.
+// Wrapper padrao de fetch para JSON usando cookie de sessao.
 async function request(path, options = {}) {
-  const token = auth.getToken();
   const headers = {
     ...(options.body ? { "Content-Type": "application/json" } : {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(options.headers || {})
   };
 
@@ -66,12 +64,11 @@ export const api = {
   createExit: (body) => request("/api/exits", { method: "POST", body: JSON.stringify(body) })
 };
 
-// Download de arquivos binarios (PDF/CSV) com token de sessao.
+// Download de arquivos binarios (PDF/CSV) usando cookie de sessao.
 export async function downloadFile(path, filename) {
-  const token = auth.getToken();
   const res = await fetch(buildUrl(path), {
     credentials: "include",
-    headers: token ? { Authorization: `Bearer ${token}` } : {}
+    headers: {}
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));

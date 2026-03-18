@@ -18,4 +18,9 @@ const ExitSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Acelera consultas por produto, usuario e periodos em listagens/relatorios.
+ExitSchema.index({ date: -1, createdAt: -1 });
+ExitSchema.index({ product: 1, date: -1 });
+ExitSchema.index({ takenBy: 1, date: -1 });
+
 module.exports = mongoose.model("Exit", ExitSchema);

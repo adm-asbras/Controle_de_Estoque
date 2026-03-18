@@ -1,7 +1,7 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../api";
 
-const SECTORS = ["Expediente", "Escritório", "Limpeza", "Copa"];
+const SECTORS = ["Expediente", "Escritorio", "Limpeza", "Copa"];
 const UNITS = ["Un", "Pct", "Ltr", "Cx"];
 
 // Tela administrativa de cadastro e manutencao de produtos.
@@ -15,7 +15,6 @@ export default function AdminProducts() {
   });
   const [error, setError] = useState("");
 
-  // Carrega lista de produtos para a tabela.
   async function load() {
     setError("");
     try {
@@ -29,7 +28,6 @@ export default function AdminProducts() {
     load();
   }, []);
 
-  // Cria novo produto com dados do formulario.
   async function create(e) {
     e.preventDefault();
     setError("");
@@ -47,7 +45,6 @@ export default function AdminProducts() {
     }
   }
 
-  // Atualiza campo isolado de um produto.
   async function patch(id, field, value) {
     setError("");
     try {
@@ -58,7 +55,6 @@ export default function AdminProducts() {
     }
   }
 
-  // Remove produto pelo id.
   async function remove(id) {
     setError("");
     try {
@@ -121,20 +117,20 @@ export default function AdminProducts() {
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <div style={{ flex: 1, minWidth: "150px", maxWidth: "260px" }}>
                 <div className="small" style={{ marginBottom: 4 }}>
-                  Qtd Mínima
+                  Qtd Minima
                 </div>
                 <input
                   type="number"
                   placeholder="0"
                   value={form.minQty}
-                    onChange={(e) => setForm({ ...form, minQty: e.target.value })}
-                  />
+                  onChange={(e) => setForm({ ...form, minQty: e.target.value })}
+                />
               </div>
             </div>
 
             <button>Criar</button>
             <div className="small">
-              O sistema alerta automaticamente quando <b>Qtd {"<="} Mínimo</b>.
+              O sistema alerta automaticamente quando <b>Qtd {"<="} Minimo</b>.
             </div>
           </form>
         </div>
@@ -143,7 +139,7 @@ export default function AdminProducts() {
           <h3 style={{ marginTop: 0 }}>Exemplos de Categoria</h3>
           <ul className="small" style={{ marginTop: 0, lineHeight: 1.7 }}>
             <li>
-               <b>Caneta</b> - Escritório
+              <b>Caneta</b> - Escritorio
             </li>
             <li>
               <b>Papel A4</b> - Expediente
@@ -153,13 +149,12 @@ export default function AdminProducts() {
             </li>
           </ul>
           <div className="small">
-            <span className="badge ok">OK</span> acima do mínimo{" "}
-            <span className="badge danger">REPOR</span> no mínimo/abaixo
+            <span className="badge ok">OK</span> acima do minimo{" "}
+            <span className="badge danger">REPOR</span> no minimo/abaixo
           </div>
         </div>
       </div>
 
-      {/* Carrossel de produtos para repor */}
       {restockItems.length > 0 && (
         <div
           className="card"
@@ -167,14 +162,12 @@ export default function AdminProducts() {
             padding: 16,
             marginTop: 14,
             borderLeft: "4px solid var(--danger)",
-            overflow: "hidden" // impede vazar do card
+            overflow: "hidden"
           }}
         >
           <h3 style={{ marginTop: 0, color: "var(--danger)" }}>Produtos para Repor</h3>
 
-          {/* área visível */}
           <div style={{ overflow: "hidden", width: "100%" }}>
-            {/* trilho animado */}
             <div
               className={shouldLoopRestock ? "restock-carousel" : ""}
               style={{
@@ -231,9 +224,9 @@ export default function AdminProducts() {
               <th>Categoria</th>
               <th>Unidade</th>
               <th>Quantidade</th>
-              <th>Mínimo</th>
+              <th>Minimo</th>
               <th>Status</th>
-              <th>Ações</th>
+              <th>Acoes</th>
             </tr>
           </thead>
 

@@ -6,6 +6,11 @@ const PASSWORD_REGEX = /^.{6,128}$/;
 const ALLOWED_SECTORS = new Set(["Expediente", "Escritorio", "Limpeza", "Copa"]);
 const ALLOWED_UNITS = new Set(["Un", "Pct", "Ltr", "Cx"]);
 
+function normalizeSector(value) {
+  const cleanValue = sanitizeText(value, 20);
+  return cleanValue === "Escritório" ? "Escritorio" : cleanValue;
+}
+
 // Remove controle invisivel e aplica trim/tamanho maximo.
 function sanitizeText(value, maxLen = 120) {
   if (typeof value !== "string") return "";
@@ -32,7 +37,15 @@ function validateDateOnly(dateStr) {
   const [year, month, day] = dateStr.split("-").map(Number);
   if (year < 2000 || year > 2100) return null;
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0, 0));
+  const parsed = new Date(Date.UTC(year, month - 1, day, 12, 0, 0, 0));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  return parsed;
 }
 
 // Valida credenciais de cadastro.
@@ -67,7 +80,7 @@ function validateProductPayload(body, { partial = false } = {}) {
   }
 
   if (!partial || body.sector != null) {
-    const sector = sanitizeText(body.sector, 20);
+    const sector = normalizeSector(body.sector);
     if (!ALLOWED_SECTORS.has(sector)) return { ok: false, error: "sector invalido" };
     patch.sector = sector;
   }

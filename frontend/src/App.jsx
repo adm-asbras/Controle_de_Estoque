@@ -83,7 +83,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </main>
-        <footer className="app-footer">© Todos os direitos reservados.</footer>
+        <footer className="app-footer">(c) Todos os direitos reservados.</footer>
       </div>
     </BrowserRouter>
   );
