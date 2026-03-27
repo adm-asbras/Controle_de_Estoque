@@ -1,19 +1,23 @@
-app = "controle-de-estoque"
-primary_region = "gru"
+# fly.toml app configuration file generated for controle-de-estoque on 2026-03-27T14:19:45Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-[env]
-  PORT = "4000"
-  NODE_ENV = "production"
+app = 'controle-de-estoque'
+primary_region = 'gru'
+
+[build]
 
 [http_service]
-  internal_port = 4000
+  internal_port = 8080
   force_https = true
-  auto_stop_machines = "stop"
+  auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
-  processes = ["app"]
+  processes = ['app']
 
 [[vm]]
-  cpu_kind = "shared"
+  memory = '1gb'
+  cpu_kind = 'shared'
   cpus = 1
-  memory_mb = 512
+  memory_mb = 1024
