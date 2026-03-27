@@ -16,10 +16,12 @@ const MONTH_OPTIONS = [
   { value: 12, label: "Dezembro" }
 ];
 
+// Exibe datas no formato brasileiro de forma previsivel.
 function formatDateBR(date) {
   return new Date(date).toLocaleDateString("pt-BR", { timeZone: "UTC" });
 }
 
+// Tela de exportacao dos relatorios em PDF/CSV.
 export default function AdminReports() {
   const [error, setError] = useState("");
   const [mode, setMode] = useState("date");
@@ -27,16 +29,19 @@ export default function AdminReports() {
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [months, setMonths] = useState([]);
 
+  // Marca ou desmarca um mes dentro da selecao manual.
   function toggleMonth(monthValue) {
     setMonths((prev) =>
       prev.includes(monthValue) ? prev.filter((m) => m !== monthValue) : [...prev, monthValue].sort((a, b) => a - b)
     );
   }
 
+  // Atalhos como T1, S1 e Ano inteiro.
   function setMonthsPreset(preset) {
     setMonths([...preset].sort((a, b) => a - b));
   }
 
+  // Monta a URL final de download conforme o modo de filtro escolhido.
   async function dl(path, filename) {
     setError("");
     try {

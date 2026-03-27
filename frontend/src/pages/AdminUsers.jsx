@@ -3,6 +3,7 @@ import { api } from "../api";
 import { auth } from "../auth";
 
 // Tela administrativa para criacao de usuarios.
+// Somente o gestor de contas deve acessar este fluxo.
 export default function AdminUsers() {
   const [form, setForm] = useState({
     username: "",
@@ -18,6 +19,7 @@ export default function AdminUsers() {
   const [busyUserId, setBusyUserId] = useState("");
   const currentUsername = auth.getUsername();
 
+  // Busca a lista atual de usuarios cadastrados.
   async function loadUsers() {
     setLoadingUsers(true);
     try {
@@ -34,6 +36,7 @@ export default function AdminUsers() {
     loadUsers();
   }, []);
 
+  // Cria uma nova conta depois de validar o formulario localmente.
   async function createUser(e) {
     e.preventDefault();
     setError("");
@@ -73,6 +76,7 @@ export default function AdminUsers() {
     }
   }
 
+  // Atualiza o papel de acesso do usuario escolhido.
   async function changeRole(userId, role) {
     setError("");
     setSuccess("");
@@ -88,6 +92,7 @@ export default function AdminUsers() {
     }
   }
 
+  // Remove uma conta existente apos confirmacao do operador.
   async function removeUser(userId, username) {
     setError("");
     setSuccess("");

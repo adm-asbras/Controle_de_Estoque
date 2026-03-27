@@ -2,6 +2,7 @@
 
 const rawApiUrl = (import.meta.env.VITE_API_URL || "").trim();
 
+// Normaliza a URL-base para aceitar dominio puro, localhost ou URL completa.
 function normalizeApiUrl(value) {
   if (!value) return "";
   if (/^https?:\/\//i.test(value)) return value.replace(/\/+$/, "");
@@ -11,6 +12,7 @@ function normalizeApiUrl(value) {
 
 const API_URL = normalizeApiUrl(rawApiUrl);
 
+// Garante que sempre montamos um caminho absoluto coerente para a API.
 function buildUrl(path) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   if (API_URL.endsWith("/api") && normalizedPath.startsWith("/api/")) {
@@ -42,6 +44,8 @@ async function request(path, options = {}) {
 // Cliente de API consumido pelas telas.
 export const api = {
   login: (body) => request("/api/auth/login", { method: "POST", body: JSON.stringify(body) }),
+  // Cadastro publico continua exposto aqui apenas se a UI voltar a usar essa tela.
+  register: (body) => request("/api/auth/register", { method: "POST", body: JSON.stringify(body) }),
   adminCreateUser: (body) => request("/api/auth/admin/users", { method: "POST", body: JSON.stringify(body) }),
   listUsers: () => request("/api/auth/admin/users"),
   updateUserRole: (id, body) => request(`/api/auth/admin/users/${id}/role`, { method: "PUT", body: JSON.stringify(body) }),

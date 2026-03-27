@@ -13,6 +13,7 @@ import AdminUsers from "./pages/AdminUsers";
 import UserExits from "./pages/UserExits";
 
 // Define o roteamento principal da SPA.
+// Aqui centralizamos quais telas sao publicas e quais exigem autenticacao.
 export default function App() {
   return (
     <BrowserRouter>
@@ -83,7 +84,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </main>
-        <footer className="app-footer">(c) Todos os direitos reservados.</footer>
+        <footer className="app-footer">&copy; 2026 Todos os direitos reservados. - Desenvolvido por Erick Neves</footer>
       </div>
     </BrowserRouter>
   );

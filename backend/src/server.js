@@ -16,6 +16,8 @@ const entriesRoutes = require("./routes/entries.routes");
 const exitsRoutes = require("./routes/exits.routes");
 const reportsRoutes = require("./routes/reports.routes");
 
+// Monta a aplicacao Express sem iniciar o servidor.
+// Isso facilita testes e deixa o bootstrap separado da configuracao.
 function createApp() {
   const app = express();
   const allowedOrigins = getAllowedOrigins();
@@ -63,14 +65,14 @@ function createApp() {
 
   app.get("/health", (req, res) => res.json({ ok: true }));
 
-  const docsDirCandidates = ["Documentacao", "DocumentaÃ§Ã£o"].map((folder) =>
+  const docsDirCandidates = ["Documentacao", "Documenta\u00E7\u00E3o"].map((folder) =>
     path.resolve(__dirname, "..", "..", folder)
   );
   const docsDir = docsDirCandidates.find((folder) => fs.existsSync(folder)) || docsDirCandidates[0];
   app.use("/docs", express.static(docsDir));
   app.get("/docs", (req, res) => {
     if (!fs.existsSync(docsDir)) {
-      return res.status(404).send("Pasta de documentaÃ§Ã£o nao encontrada.");
+      return res.status(404).send("Pasta de documenta\u00E7\u00E3o nao encontrada.");
     }
 
     const files = fs
@@ -84,7 +86,7 @@ function createApp() {
 
     return res
       .type("html")
-      .send(`<!doctype html><html><head><meta charset="utf-8"><title>DocumentaÃ§Ã£o</title></head><body><h1>DocumentaÃ§Ã£o</h1><ul>${links || "<li>Nenhum arquivo encontrado.</li>"}</ul></body></html>`);
+      .send(`<!doctype html><html><head><meta charset="utf-8"><title>Documenta\u00E7\u00E3o</title></head><body><h1>Documenta\u00E7\u00E3o</h1><ul>${links || "<li>Nenhum arquivo encontrado.</li>"}</ul></body></html>`);
   });
 
   app.use("/api/auth", authRoutes);

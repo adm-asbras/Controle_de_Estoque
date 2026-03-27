@@ -25,6 +25,7 @@ export default function Nav() {
 
   if (!logged) return null;
 
+  // Faz logout remoto quando possivel e sempre limpa o estado local ao final.
   async function logout() {
     try {
       await api.logout();
@@ -42,6 +43,7 @@ export default function Nav() {
       "Gestao de Contas": "Gestão de Contas",
       Relatorios: "Relatórios"
     }[label] || label);
+  // Monta o menu dinamicamente para cada perfil.
   const links = isAdmin
     ? [
         { to: "/admin/produtos", label: "Produtos", icon: "📦" },
@@ -100,6 +102,7 @@ export default function Nav() {
           </div>
 
           <div id="menu-extra-actions" className={`menu-actions ${showExtraActions ? "open" : "closed"}`}>
+            {/* Atalhos secundarios ficam recolhidos para reduzir ruido visual. */}
             <a href={docsUrl} target="_blank" rel="noopener noreferrer" className="action-link">
               <span className="action-icon">📘</span>
               <span>Documentação</span>

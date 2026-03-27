@@ -3,16 +3,19 @@ import { api } from "../api";
 
 const SECTORS = ["Expediente", "Escritorio", "Limpeza", "Copa"];
 
+// Gera a data de hoje no formato esperado pelo input type="date".
 function getTodayLocalInputValue() {
   const now = new Date();
   const tzOffsetMs = now.getTimezoneOffset() * 60000;
   return new Date(now.getTime() - tzOffsetMs).toISOString().slice(0, 10);
 }
 
+// Mostra datas no padrao brasileiro sem sofrer com variacao de fuso.
 function formatDateBR(date) {
   return new Date(date).toLocaleDateString("pt-BR", { timeZone: "UTC" });
 }
 
+// Tela de lancamento de entradas e consulta do historico.
 export default function AdminEntries() {
   const [products, setProducts] = useState([]);
   const [entries, setEntries] = useState([]);
@@ -25,6 +28,7 @@ export default function AdminEntries() {
     date: getTodayLocalInputValue()
   });
 
+  // Recarrega produtos do setor escolhido e o historico completo de entradas.
   async function load(selectedSector = form.sector) {
     setError("");
     try {
@@ -48,6 +52,7 @@ export default function AdminEntries() {
     load(form.sector);
   }, [form.sector]);
 
+  // Envia a nova entrada e depois sincroniza a tela com o estoque atualizado.
   async function create(e) {
     e.preventDefault();
     setError("");

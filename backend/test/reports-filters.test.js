@@ -45,7 +45,7 @@ test("getDateFilterFromQuery rejeita startDate maior que endDate", () => {
 
   assert.equal(result, null);
   assert.equal(res.statusCode, 400);
-  assert.deepEqual(res.body, { error: "startDate nao pode ser maior que endDate" });
+  assert.deepEqual(res.body, { error: "startDate não pode ser maior que endDate" });
 });
 
 test("parseMonthsFilterFromQuery aceita meses validos", () => {
@@ -59,5 +59,5 @@ test("parseMonthsFilterFromQuery aceita meses validos", () => {
 
 test("formatMonthsFilterLabel gera rotulo amigavel", () => {
   const label = formatMonthsFilterLabel({ year: 2026, months: [1, 2, 3] });
-  assert.equal(label, "Janeiro, Fevereiro, Marco / 2026");
+  assert.equal(label, "Janeiro, Fevereiro, Março / 2026");
 });

@@ -31,12 +31,12 @@ async function sendPasswordResetEmail(toEmail, resetLink) {
   await transport.sendMail({
     from,
     to: toEmail,
-    subject: "Recuperacao de senha - Controle de Estoque",
-    text: `Recebemos uma solicitacao para redefinir sua senha. Acesse: ${resetLink}\n\nSe nao foi voce, ignore este email.`,
+    subject: "Recupera\u00E7\u00E3o de senha - Controle de Estoque",
+    text: `Recebemos uma solicita\u00E7\u00E3o para redefinir sua senha. Acesse: ${resetLink}\n\nSe nao foi voce, ignore este email.`,
     html: `
       <div style="font-family:Arial,sans-serif;line-height:1.5">
-        <h2>Recuperacao de senha</h2>
-        <p>Recebemos uma solicitacao para redefinir sua senha.</p>
+        <h2>Recupera\u00E7\u00E3o de senha</h2>
+        <p>Recebemos uma solicita\u00E7\u00E3o para redefinir sua senha.</p>
         <p><a href="${resetLink}">Clique aqui para redefinir sua senha</a></p>
         <p>Se nao foi voce, ignore este email.</p>
       </div>

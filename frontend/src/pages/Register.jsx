@@ -4,6 +4,7 @@ import { api } from "../api";
 import logo from "../assets/logo.avif";
 
 // Tela de cadastro de novos usuarios.
+// Hoje o backend bloqueia cadastro publico, entao esta tela funciona mais como fallback futuro.
 export default function Register() {
   const [form, setForm] = useState({
     username: "",
@@ -15,7 +16,7 @@ export default function Register() {
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
 
-  // Valida formulario localmente e chama endpoint de registro.
+  // Valida formulario localmente para evitar ida desnecessaria ao backend.
   async function onSubmit(e) {
     e.preventDefault();
     setError("");

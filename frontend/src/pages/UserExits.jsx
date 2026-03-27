@@ -4,16 +4,19 @@ import { auth } from "../auth";
 
 const SECTORS = ["Expediente", "Escritorio", "Limpeza", "Copa"];
 
+// Gera a data inicial do formulario no fuso local.
 function getTodayLocalInputValue() {
   const now = new Date();
   const tzOffsetMs = now.getTimezoneOffset() * 60000;
   return new Date(now.getTime() - tzOffsetMs).toISOString().slice(0, 10);
 }
 
+// Formata datas de saida no padrao brasileiro.
 function formatDateBR(date) {
   return new Date(date).toLocaleDateString("pt-BR", { timeZone: "UTC" });
 }
 
+// Tela de retirada de itens do estoque e consulta do historico.
 export default function UserExits() {
   const [sector, setSector] = useState("Expediente");
   const [products, setProducts] = useState([]);
@@ -28,11 +31,13 @@ export default function UserExits() {
     date: getTodayLocalInputValue()
   });
 
+  // Mantem em memoria o produto atualmente selecionado para mostrar saldo rapido.
   const selectedProduct = useMemo(
     () => products.find((p) => p._id === form.productId),
     [products, form.productId]
   );
 
+  // Recarrega produtos do setor atual e as saidas visiveis para o usuario.
   async function load(selectedSector = sector) {
     setError("");
     try {
@@ -48,8 +53,12 @@ export default function UserExits() {
     }
   }
 
-  useEffect(() => { load(sector); }, [sector]);
+  // Sempre que o setor muda, a lista de produtos precisa ser refeita.
+  useEffect(() => {
+    load(sector);
+  }, [sector]);
 
+  // Registra a saida e depois atualiza o estoque e o historico mostrados.
   async function create(e) {
     e.preventDefault();
     setError("");
