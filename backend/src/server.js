@@ -63,6 +63,14 @@ function createApp() {
   app.use("/api/auth/reset-password", passwordRecoveryRateLimit);
   app.use("/api/auth/change-password", passwordRecoveryRateLimit);
 
+  app.get("/", (req, res) =>
+    res.json({
+      ok: true,
+      service: "controle-de-estoque-api",
+      health: "/health",
+      docs: "/docs"
+    })
+  );
   app.get("/health", (req, res) => res.json({ ok: true }));
 
   const docsDirCandidates = ["Documentacao", "Documenta\u00E7\u00E3o"].map((folder) =>

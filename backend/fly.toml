@@ -4,6 +4,8 @@ primary_region = "gru"
 [env]
   PORT = "4000"
   NODE_ENV = "production"
+  CORS_ORIGIN = "https://controle-de-estoque.pages.dev"
+  FRONTEND_URL = "https://controle-de-estoque.pages.dev"
 
 [http_service]
   internal_port = 4000

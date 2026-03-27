@@ -1,10 +1,14 @@
 // Le lista de origens permitidas para CORS (separadas por virgula).
 function getAllowedOrigins() {
-  const raw = process.env.CORS_ORIGIN || "";
-  return raw
+  const rawOrigins = [process.env.CORS_ORIGIN || "", process.env.FRONTEND_URL || ""]
+    .filter(Boolean)
+    .join(",");
+
+  return rawOrigins
     .split(",")
     .map((item) => item.trim())
-    .filter(Boolean);
+    .filter(Boolean)
+    .filter((item, index, list) => list.indexOf(item) === index);
 }
 
 // Indica se a aplicacao esta em ambiente de producao.
@@ -17,7 +21,7 @@ function authCookieOptions() {
   return {
     httpOnly: true,
     secure: isProduction(),
-    sameSite: "lax",
+    sameSite: isProduction() ? "none" : "lax",
     path: "/",
     maxAge: 8 * 60 * 60 * 1000
   };
@@ -28,7 +32,7 @@ function clearAuthCookieOptions() {
   return {
     httpOnly: true,
     secure: isProduction(),
-    sameSite: "lax",
+    sameSite: isProduction() ? "none" : "lax",
     path: "/"
   };
 }
