@@ -1,4 +1,4 @@
-app = "estoque-backend"
+app = "controle-de-estoque"
 primary_region = "gru"
 
 [env]
