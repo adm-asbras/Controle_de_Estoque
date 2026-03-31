@@ -1,3 +1,5 @@
+import { auth } from "./auth";
+
 const rawApiUrl = (import.meta.env.VITE_API_URL || "").trim();
 
 // Normaliza a URL-base para aceitar dominio puro, localhost ou URL completa.
