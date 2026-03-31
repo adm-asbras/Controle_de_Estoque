@@ -8,6 +8,7 @@ const { runWithOptionalTransaction } = require("../utils/db-transaction");
 const { sanitizeText, validateMovementPayload } = require("../utils/validation");
 
 const router = express.Router();
+const DIRECT_EXIT_ROLES = new Set(["admin", "admin_limited"]);
 
 function createHttpError(status, message) {
   const err = new Error(message);
@@ -26,8 +27,8 @@ async function createExitWithTransaction(validated, username, observation) {
 
       if (!product) {
         const existingProduct = await Product.findById(validated.productId).select("_id qty").session(session);
-        if (!existingProduct) throw createHttpError(404, "Produto nao encontrado");
-        throw createHttpError(400, `Estoque insuficiente. Disponivel: ${existingProduct.qty}`);
+        if (!existingProduct) throw createHttpError(404, "Produto não encontrado");
+        throw createHttpError(400, `Estoque insuficiente. Disponível: ${existingProduct.qty}`);
       }
 
       const [exitItem] = await Exit.create([{
@@ -50,8 +51,8 @@ async function createExitWithTransaction(validated, username, observation) {
 
       if (!product) {
         const existingProduct = await Product.findById(validated.productId).select("_id qty");
-        if (!existingProduct) throw createHttpError(404, "Produto nao encontrado");
-        throw createHttpError(400, `Estoque insuficiente. Disponivel: ${existingProduct.qty}`);
+        if (!existingProduct) throw createHttpError(404, "Produto não encontrado");
+        throw createHttpError(400, `Estoque insuficiente. Disponível: ${existingProduct.qty}`);
       }
 
       let exitItem;
@@ -84,6 +85,10 @@ router.get("/", requireAuth, asyncHandler(async (req, res) => {
 
 // Registra saida e decrementa estoque.
 router.post("/", requireAuth, asyncHandler(async (req, res) => {
+  if (!DIRECT_EXIT_ROLES.has(req.user.role)) {
+    return res.status(403).json({ error: "Saída direta não permitida para este perfil. Use Solicitações." });
+  }
+
   const validated = validateMovementPayload(req.body || {});
   if (!validated.ok) return res.status(400).json({ error: validated.error });
   const observation = sanitizeText(req.body?.observation || "", 240);

@@ -23,7 +23,7 @@ async function createEntryWithTransaction(validated, username) {
         { $inc: { qty: validated.qty } },
         { new: true, runValidators: true, session }
       );
-      if (!product) throw createHttpError(404, "Produto nao encontrado");
+      if (!product) throw createHttpError(404, "Produto não encontrado");
 
       const [entry] = await Entry.create([{
         product: product._id,
@@ -41,7 +41,7 @@ async function createEntryWithTransaction(validated, username) {
         { $inc: { qty: validated.qty } },
         { new: true, runValidators: true }
       );
-      if (!product) throw createHttpError(404, "Produto nao encontrado");
+      if (!product) throw createHttpError(404, "Produto não encontrado");
 
       let entry;
       try {

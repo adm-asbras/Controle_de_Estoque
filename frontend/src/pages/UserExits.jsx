@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api";
 import { auth } from "../auth";
-
-const SECTORS = ["Expediente", "Escritorio", "Limpeza", "Copa"];
+import { SECTORS } from "../constants/inventory";
 
 // Gera a data inicial do formulario no fuso local.
 function getTodayLocalInputValue() {
@@ -78,7 +77,7 @@ export default function UserExits() {
 
   return (
     <div className="container" style={{ padding: "16px 0" }}>
-      <h2 className="page-title">Saidas</h2>
+      <h2 className="page-title">Saídas</h2>
       {error && <p style={{ color: "var(--danger)" }}>{error}</p>}
 
       <div className="card" style={{ padding: 16, marginBottom: 14 }}>
@@ -95,7 +94,7 @@ export default function UserExits() {
               <div className="small">Selecionado</div>
               <div style={{ fontWeight: 800 }}>{selectedProduct.name} - {selectedProduct.qty} {selectedProduct.unit} em estoque</div>
               <div className="small">
-                Minimo: {selectedProduct.minQty}{" "}
+                Mínimo: {selectedProduct.minQty}{" "}
                 {selectedProduct.needsRestock ? <span className="badge danger">REPOR</span> : <span className="badge ok">OK</span>}
               </div>
             </div>
@@ -105,7 +104,7 @@ export default function UserExits() {
 
       <div className="grid two">
         <div className="card" style={{ padding: 16 }}>
-          <h3 style={{ marginTop: 0 }}>Registrar saida</h3>
+          <h3 style={{ marginTop: 0 }}>Registrar saída</h3>
           <form onSubmit={create} style={{ display: "grid", gap: 10 }}>
             <select value={form.productId} onChange={(e) => setForm({ ...form, productId: e.target.value })} disabled={products.length === 0}>
               {products.map((p) => <option key={p._id} value={p._id}>{p.name} (disp: {p.qty})</option>)}
@@ -114,7 +113,7 @@ export default function UserExits() {
             <div className="small">Retirado por: <b>{username}</b></div>
 
             <textarea
-              placeholder="Observacao (opcional)"
+              placeholder="Observação (opcional)"
               value={form.observation}
               onChange={(e) => setForm({ ...form, observation: e.target.value })}
               rows={3}
@@ -131,8 +130,8 @@ export default function UserExits() {
               </div>
             </div>
 
-            <button disabled={products.length === 0 || !form.productId}>Confirmar saida</button>
-            <div className="small">Ao registrar, o estoque e atualizado automaticamente.</div>
+            <button disabled={products.length === 0 || !form.productId}>Confirmar saída</button>
+            <div className="small">Ao registrar, o estoque é atualizado automaticamente.</div>
           </form>
         </div>
 
@@ -162,10 +161,10 @@ export default function UserExits() {
       </div>
 
       <div className="card" style={{ padding: 16, marginTop: 14 }}>
-        <h3 style={{ marginTop: 0 }}>Historico de saidas</h3>
+        <h3 style={{ marginTop: 0 }}>Histórico de saídas</h3>
         <table className="table">
           <thead>
-            <tr><th>Data</th><th>Produto</th><th>Unidade</th><th>Setor</th><th>Qtd</th><th>Retirou</th><th>Observacao</th></tr>
+            <tr><th>Data</th><th>Produto</th><th>Unidade</th><th>Setor</th><th>Qtd</th><th>Retirou</th><th>Observação</th></tr>
           </thead>
           <tbody>
             {exits.map((ex) => (

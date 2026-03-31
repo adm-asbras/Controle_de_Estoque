@@ -1,4 +1,4 @@
-const test = require("node:test");
+﻿const test = require("node:test");
 const assert = require("node:assert/strict");
 
 const { validateDateOnly, validateMovementPayload, validateProductPayload } = require("../src/utils/validation");
@@ -34,7 +34,7 @@ test("validateMovementPayload rejeita quantidade invalida", () => {
   });
 
   assert.equal(result.ok, false);
-  assert.match(result.error, /qty/);
+  assert.match(result.error, /Quantidade/);
 });
 
 test("validateProductPayload normaliza setor com acento", () => {
@@ -48,3 +48,4 @@ test("validateProductPayload normaliza setor com acento", () => {
   assert.equal(result.ok, true);
   assert.equal(result.patch.sector, "Escritorio");
 });
+

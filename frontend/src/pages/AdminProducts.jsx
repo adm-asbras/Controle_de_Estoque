@@ -1,19 +1,45 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
+import { SECTORS, UNITS } from "../constants/inventory";
 
-const SECTORS = ["Expediente", "Escritorio", "Limpeza", "Copa"];
-const UNITS = ["Un", "Pct", "Ltr", "Cx"];
+const PATCH_DEBOUNCE_MS = 450;
+
+function formatDateBR(date) {
+  return new Date(date).toLocaleDateString("pt-BR", { timeZone: "UTC" });
+}
+
+function historyTypeLabel(type) {
+  if (type === "entrada") return "Entrada";
+  if (type === "saida") return "Saída";
+  if (type === "solicitacao") return "Solicitação";
+  return type;
+}
+
+function historyStatusLabel(status) {
+  if (status === "pending") return "Pendente";
+  if (status === "approved") return "Aprovada";
+  if (status === "rejected") return "Rejeitada";
+  if (status === "completed") return "Concluída";
+  if (status === "cancelled") return "Cancelada";
+  return status;
+}
 
 // Tela administrativa de cadastro e manutencao de produtos.
 export default function AdminProducts() {
   const [items, setItems] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
+  const [historyProductId, setHistoryProductId] = useState("");
+  const [historyEvents, setHistoryEvents] = useState([]);
+  const [historyProductName, setHistoryProductName] = useState("");
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [form, setForm] = useState({
     name: "",
-    sector: "Expediente",
-    unit: "Un",
+    sector: SECTORS[0],
+    unit: UNITS[0],
     minQty: 0
   });
   const [error, setError] = useState("");
+  const patchTimersRef = useRef(new Map());
 
   async function load() {
     setError("");
@@ -24,8 +50,42 @@ export default function AdminProducts() {
     }
   }
 
+  async function loadRecommendations() {
+    try {
+      const data = await api.listProductRecommendations({ horizonDays: 60, coverageDays: 30 });
+      setRecommendations(data.items || []);
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  async function loadProductHistory(product) {
+    setHistoryLoading(true);
+    setError("");
+    try {
+      const data = await api.getProductHistory(product._id);
+      setHistoryProductId(product._id);
+      setHistoryProductName(product.name);
+      setHistoryEvents(data.events || []);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
   useEffect(() => {
     load();
+    loadRecommendations();
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      for (const timer of patchTimersRef.current.values()) {
+        clearTimeout(timer);
+      }
+      patchTimersRef.current.clear();
+    };
   }, []);
 
   async function create(e) {
@@ -38,28 +98,50 @@ export default function AdminProducts() {
         unit: form.unit,
         minQty: Number(form.minQty)
       });
-      setForm({ name: "", sector: "Expediente", unit: "Un", minQty: 0 });
+      setForm({ name: "", sector: SECTORS[0], unit: UNITS[0], minQty: 0 });
       await load();
+      await loadRecommendations();
     } catch (e) {
       setError(e.message);
     }
   }
 
-  async function patch(id, field, value) {
+  function patch(id, field, value) {
     setError("");
-    try {
-      await api.updateProduct(id, { [field]: value });
-      await load();
-    } catch (e) {
-      setError(e.message);
-    }
+    setItems((current) => current.map((item) => (item._id === id ? { ...item, [field]: value } : item)));
+
+    const key = `${id}:${field}`;
+    const pendingTimer = patchTimersRef.current.get(key);
+    if (pendingTimer) clearTimeout(pendingTimer);
+
+    const timer = setTimeout(async () => {
+      patchTimersRef.current.delete(key);
+      try {
+        const updated = await api.updateProduct(id, { [field]: value });
+        setItems((current) => current.map((item) => (item._id === id ? updated : item)));
+        loadRecommendations();
+      } catch (e) {
+        setError(e.message);
+        await load();
+        await loadRecommendations();
+      }
+    }, PATCH_DEBOUNCE_MS);
+
+    patchTimersRef.current.set(key, timer);
   }
 
   async function remove(id) {
     setError("");
     try {
+      for (const [key, timer] of patchTimersRef.current.entries()) {
+        if (key.startsWith(`${id}:`)) {
+          clearTimeout(timer);
+          patchTimersRef.current.delete(key);
+        }
+      }
       await api.deleteProduct(id);
       await load();
+      await loadRecommendations();
     } catch (e) {
       setError(e.message);
     }
@@ -117,7 +199,7 @@ export default function AdminProducts() {
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               <div style={{ flex: 1, minWidth: "150px", maxWidth: "260px" }}>
                 <div className="small" style={{ marginBottom: 4 }}>
-                  Qtd Minima
+                  Qtd. mínima
                 </div>
                 <input
                   type="number"
@@ -130,16 +212,16 @@ export default function AdminProducts() {
 
             <button>Criar</button>
             <div className="small">
-              O sistema alerta automaticamente quando <b>Qtd {"<="} Minimo</b>.
+              O sistema alerta automaticamente quando <b>Qtd {"<="} Mínimo</b>.
             </div>
           </form>
         </div>
 
         <div className="card" style={{ padding: 16 }}>
-          <h3 style={{ marginTop: 0 }}>Exemplos de Categoria</h3>
+          <h3 style={{ marginTop: 0 }}>Exemplos de categoria</h3>
           <ul className="small" style={{ marginTop: 0, lineHeight: 1.7 }}>
             <li>
-              <b>Caneta</b> - Escritorio
+              <b>Caneta</b> - Escritório
             </li>
             <li>
               <b>Papel A4</b> - Expediente
@@ -149,8 +231,8 @@ export default function AdminProducts() {
             </li>
           </ul>
           <div className="small">
-            <span className="badge ok">OK</span> acima do minimo{" "}
-            <span className="badge danger">REPOR</span> no minimo/abaixo
+            <span className="badge ok">OK</span> acima do mínimo{" "}
+            <span className="badge danger">REPOR</span> no mínimo/abaixo
           </div>
         </div>
       </div>
@@ -165,7 +247,7 @@ export default function AdminProducts() {
             overflow: "hidden"
           }}
         >
-          <h3 style={{ marginTop: 0, color: "var(--danger)" }}>Produtos para Repor</h3>
+          <h3 style={{ marginTop: 0, color: "var(--danger)" }}>Produtos para repor</h3>
 
           <div style={{ overflow: "hidden", width: "100%" }}>
             <div
@@ -224,9 +306,9 @@ export default function AdminProducts() {
               <th>Categoria</th>
               <th>Unidade</th>
               <th>Quantidade</th>
-              <th>Minimo</th>
+              <th>Mínimo</th>
               <th>Status</th>
-              <th>Acoes</th>
+              <th>Ações</th>
             </tr>
           </thead>
 
@@ -276,14 +358,119 @@ export default function AdminProducts() {
                 <td>{p.needsRestock ? <span className="badge danger">REPOR</span> : <span className="badge ok">OK</span>}</td>
 
                 <td>
-                  <button className="secondary" onClick={() => remove(p._id)}>
-                    Excluir
-                  </button>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    <button className="secondary" onClick={() => loadProductHistory(p)}>
+                      Histórico
+                    </button>
+                    <button className="secondary" onClick={() => remove(p._id)}>
+                      Excluir
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="card" style={{ padding: 16, marginTop: 14 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <h3 style={{ marginTop: 0, marginBottom: 0 }}>Sugestão automática de reposição</h3>
+          <button className="secondary" onClick={loadRecommendations}>Atualizar</button>
+        </div>
+        <div className="small" style={{ marginTop: 8, marginBottom: 10 }}>
+          Janela de consumo: 60 dias | Cobertura alvo: 30 dias
+        </div>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Produto</th>
+              <th>Categoria</th>
+              <th>Consumo médio/dia</th>
+              <th>Dias até ruptura</th>
+              <th>Sugerido</th>
+              <th>Urgência</th>
+            </tr>
+          </thead>
+          <tbody>
+            {recommendations.map((item) => (
+              <tr key={item.productId}>
+                <td>{item.productName}</td>
+                <td><span className="badge">{item.sector}</span></td>
+                <td>{item.avgDailyConsumption}</td>
+                <td>{item.daysToStockout == null ? "-" : item.daysToStockout}</td>
+                <td>
+                  <span className={item.suggestedQty > 0 ? "badge warn" : "badge"}>
+                    {item.suggestedQty}
+                    {item.unit}
+                  </span>
+                </td>
+                <td>
+                  <span className={item.urgency === "alta" ? "badge danger" : item.urgency === "media" ? "badge warn" : "badge ok"}>
+                    {item.urgency}
+                  </span>
+                </td>
+              </tr>
+            ))}
+            {recommendations.length === 0 && (
+              <tr>
+                <td colSpan={6} className="small">Nenhuma sugestão no momento.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="card" style={{ padding: 16, marginTop: 14 }}>
+        <h3 style={{ marginTop: 0 }}>Histórico completo por item</h3>
+        {historyProductId ? (
+          <>
+            <div className="small" style={{ marginBottom: 10 }}>
+              Produto selecionado: <b>{historyProductName}</b>
+            </div>
+            {historyLoading ? (
+              <p className="small">Carregando histórico...</p>
+            ) : (
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Tipo</th>
+                    <th>Delta</th>
+                      <th>Responsável</th>
+                    <th>Status</th>
+                    <th>Detalhes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historyEvents.map((event) => (
+                    <tr key={event.id}>
+                      <td>{formatDateBR(event.date)}</td>
+                      <td><span className="badge">{historyTypeLabel(event.type)}</span></td>
+                      <td>
+                        <span className={event.qtyDelta < 0 ? "badge warn" : event.qtyDelta > 0 ? "badge ok" : "badge"}>
+                          {event.qtyDelta > 0 ? `+${event.qtyDelta}` : event.qtyDelta}
+                        </span>
+                      </td>
+                      <td>{event.actor || "-"}</td>
+                      <td>
+                        {event.status ? <span className="badge">{historyStatusLabel(event.status)}</span> : "-"}
+                      </td>
+                      <td>{event.details}</td>
+                    </tr>
+                  ))}
+                  {historyEvents.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="small">Sem eventos para este item.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </>
+        ) : (
+          <p className="small">Clique em "Histórico" no produto para carregar a linha do tempo.</p>
+        )}
       </div>
     </div>
   );

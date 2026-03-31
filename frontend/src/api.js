@@ -1,5 +1,3 @@
-﻿import { auth } from "./auth";
-
 const rawApiUrl = (import.meta.env.VITE_API_URL || "").trim();
 
 // Normaliza a URL-base para aceitar dominio puro, localhost ou URL completa.
@@ -11,6 +9,14 @@ function normalizeApiUrl(value) {
 }
 
 const API_URL = normalizeApiUrl(rawApiUrl);
+const CSRF_HEADER = "X-CSRF-Token";
+
+function getCookie(name) {
+  if (typeof document === "undefined") return "";
+  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${escapedName}=([^;]*)`));
+  return match ? decodeURIComponent(match[1]) : "";
+}
 
 // Garante que sempre montamos um caminho absoluto coerente para a API.
 function buildUrl(path) {
@@ -23,8 +29,12 @@ function buildUrl(path) {
 
 // Wrapper padrao de fetch para JSON usando cookie de sessao.
 async function request(path, options = {}) {
+  const method = (options.method || "GET").toUpperCase();
+  const isMutating = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+  const csrfToken = isMutating ? getCookie("csrf_token") : "";
   const headers = {
     ...(options.body ? { "Content-Type": "application/json" } : {}),
+    ...(csrfToken ? { [CSRF_HEADER]: csrfToken } : {}),
     ...(options.headers || {})
   };
 
@@ -57,9 +67,23 @@ export const api = {
   logout: () => request("/api/auth/logout", { method: "POST" }),
 
   listProducts: (sector) => request(sector ? `/api/products?sector=${encodeURIComponent(sector)}` : "/api/products"),
+  listProductRecommendations: (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.horizonDays != null) query.set("horizonDays", String(params.horizonDays));
+    if (params.coverageDays != null) query.set("coverageDays", String(params.coverageDays));
+    return request(`/api/products/recommendations${query.toString() ? `?${query.toString()}` : ""}`);
+  },
+  getProductHistory: (id) => request(`/api/products/${id}/history`),
   createProduct: (body) => request("/api/products", { method: "POST", body: JSON.stringify(body) }),
   updateProduct: (id, body) => request(`/api/products/${id}`, { method: "PUT", body: JSON.stringify(body) }),
   deleteProduct: (id) => request(`/api/products/${id}`, { method: "DELETE" }),
+
+  listRequests: (status) => request(status ? `/api/requests?status=${encodeURIComponent(status)}` : "/api/requests"),
+  createRequest: (body) => request("/api/requests", { method: "POST", body: JSON.stringify(body) }),
+  reviewRequest: (id, body) => request(`/api/requests/${id}/review`, { method: "PUT", body: JSON.stringify(body) }),
+  getUnreadRequestResponsesCount: () => request("/api/requests/unread-responses/count"),
+  markUnreadRequestResponsesSeen: () => request("/api/requests/unread-responses/mark-seen", { method: "POST" }),
+  markRequestResponseSeen: (id) => request(`/api/requests/unread-responses/${id}/mark-seen`, { method: "POST" }),
 
   listEntries: () => request("/api/entries"),
   createEntry: (body) => request("/api/entries", { method: "POST", body: JSON.stringify(body) }),

@@ -24,7 +24,7 @@ function createTransport() {
 async function sendPasswordResetEmail(toEmail, resetLink) {
   const transport = createTransport();
   if (!transport) {
-    throw new Error("SMTP nao configurado no ambiente");
+    throw new Error("SMTP não configurado no ambiente.");
   }
 
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
@@ -32,13 +32,13 @@ async function sendPasswordResetEmail(toEmail, resetLink) {
     from,
     to: toEmail,
     subject: "Recupera\u00E7\u00E3o de senha - Controle de Estoque",
-    text: `Recebemos uma solicita\u00E7\u00E3o para redefinir sua senha. Acesse: ${resetLink}\n\nSe nao foi voce, ignore este email.`,
+    text: `Recebemos uma solicita\u00E7\u00E3o para redefinir sua senha. Acesse: ${resetLink}\n\nSe n\u00E3o foi voc\u00EA, ignore este e-mail.`,
     html: `
       <div style="font-family:Arial,sans-serif;line-height:1.5">
         <h2>Recupera\u00E7\u00E3o de senha</h2>
         <p>Recebemos uma solicita\u00E7\u00E3o para redefinir sua senha.</p>
         <p><a href="${resetLink}">Clique aqui para redefinir sua senha</a></p>
-        <p>Se nao foi voce, ignore este email.</p>
+        <p>Se n\u00E3o foi voc\u00EA, ignore este e-mail.</p>
       </div>
     `
   });

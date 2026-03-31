@@ -19,7 +19,7 @@ export default function Login() {
       const data = await api.login({ username, password });
       auth.saveSession(data);
       if (data.role === "admin" || data.role === "admin_limited") navigate("/admin/produtos");
-      else navigate("/usuario/saidas");
+      else navigate("/solicitacoes");
     } catch (err) {
       setError(err.message);
     }

@@ -1,3 +1,5 @@
+const crypto = require("crypto");
+
 // Le lista de origens permitidas para CORS (separadas por virgula).
 function getAllowedOrigins() {
   const rawOrigins = [process.env.CORS_ORIGIN || "", process.env.FRONTEND_URL || ""]
@@ -37,6 +39,31 @@ function clearAuthCookieOptions() {
   };
 }
 
+// Cria token aleatorio para protecao CSRF no padrao double-submit cookie.
+function createCsrfToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+// Cookie CSRF precisa ser legivel pelo frontend para envio no header X-CSRF-Token.
+function csrfCookieOptions() {
+  return {
+    httpOnly: false,
+    secure: isProduction(),
+    sameSite: isProduction() ? "none" : "lax",
+    path: "/",
+    maxAge: 8 * 60 * 60 * 1000
+  };
+}
+
+function clearCsrfCookieOptions() {
+  return {
+    httpOnly: false,
+    secure: isProduction(),
+    sameSite: isProduction() ? "none" : "lax",
+    path: "/"
+  };
+}
+
 // Parser simples para cabecalho Cookie em formato "k=v; k2=v2".
 function parseCookies(headerValue) {
   if (!headerValue || typeof headerValue !== "string") return {};
@@ -55,6 +82,9 @@ module.exports = {
   getAllowedOrigins,
   authCookieOptions,
   clearAuthCookieOptions,
+  createCsrfToken,
+  csrfCookieOptions,
+  clearCsrfCookieOptions,
   parseCookies,
   isProduction
 };

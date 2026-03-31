@@ -1,4 +1,6 @@
 // Regras centrais de validacao para entradas da API.
+const { z } = require("zod");
+
 const USERNAME_REGEX = /^[a-zA-Z0-9._-]{3,32}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_REGEX = /^.{6,128}$/;
@@ -31,6 +33,18 @@ function parseNonNegativeInt(value) {
   return num;
 }
 
+function getSchemaErrorMessage(result, fallbackMessage = "Dados inválidos.") {
+  if (result.success) return "";
+  return result.error.issues[0]?.message || fallbackMessage;
+}
+
+function buildParsedSchema(parser, message) {
+  return z
+    .any()
+    .transform((value) => parser(value))
+    .refine((value) => value != null, { message });
+}
+
 // Valida data no formato YYYY-MM-DD e converte para UTC.
 function validateDateOnly(dateStr) {
   if (typeof dateStr !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return null;
@@ -48,59 +62,93 @@ function validateDateOnly(dateStr) {
   return parsed;
 }
 
+const credentialsSchema = z.object({
+  username: z
+    .any()
+    .transform((value) => sanitizeText(value, 32))
+    .refine((value) => USERNAME_REGEX.test(value), {
+      message: "Nome de usuário inválido. Use de 3 a 32 caracteres (letras, números, . _ -)."
+    }),
+  email: z
+    .any()
+    .transform((value) => sanitizeText(value, 120).toLowerCase())
+    .refine((value) => EMAIL_REGEX.test(value), { message: "E-mail inválido." }),
+  password: z
+    .any()
+    .transform((value) => (typeof value === "string" ? value : ""))
+    .refine((value) => PASSWORD_REGEX.test(value), { message: "Senha fraca. Mínimo de 6 caracteres." })
+});
+
+const productNameSchema = z
+  .any()
+  .transform((value) => sanitizeText(value, 80))
+  .refine((value) => Boolean(value), { message: "Nome do produto é obrigatório." });
+
+const sectorSchema = z
+  .any()
+  .transform((value) => normalizeSector(value))
+  .refine((value) => ALLOWED_SECTORS.has(value), { message: "Setor inválido." });
+
+const unitSchema = z
+  .any()
+  .transform((value) => sanitizeText(value, 10))
+  .refine((value) => ALLOWED_UNITS.has(value), { message: "Unidade inválida." });
+
+const minQtySchema = buildParsedSchema(parseNonNegativeInt, "Quantidade mínima inválida.");
+const qtySchema = buildParsedSchema(parseNonNegativeInt, "Quantidade inválida.");
+
+const movementSchema = z.object({
+  productId: z
+    .any()
+    .transform((value) => sanitizeText(value, 40))
+    .refine((value) => Boolean(value), { message: "Produto é obrigatório." }),
+  qty: buildParsedSchema(parsePositiveInt, "Quantidade deve ser um número inteiro maior ou igual a 1."),
+  date: z
+    .any()
+    .transform((value) => validateDateOnly(value))
+    .refine((value) => value instanceof Date, { message: "Data inválida. Use YYYY-MM-DD." })
+});
+
 // Valida credenciais de cadastro.
 function validateCredentials({ username, email, password }) {
-  const cleanUsername = sanitizeText(username, 32);
-  const cleanEmail = sanitizeText(email, 120).toLowerCase();
-
-  if (!USERNAME_REGEX.test(cleanUsername)) {
-    return { ok: false, error: "username invalido. Use 3-32 caracteres (letras, numeros, . _ -)" };
-  }
-  if (!EMAIL_REGEX.test(cleanEmail)) {
-    return { ok: false, error: "email invalido" };
-  }
-  if (!PASSWORD_REGEX.test(password || "")) {
-    return {
-      ok: false,
-      error: "senha fraca. Minimo 6 caracteres"
-    };
-  }
-
-  return { ok: true, username: cleanUsername, email: cleanEmail };
+  const result = credentialsSchema.safeParse({ username, email, password });
+  if (!result.success) return { ok: false, error: getSchemaErrorMessage(result) };
+  return { ok: true, username: result.data.username, email: result.data.email };
 }
 
 // Valida payload de produto para create/update.
 function validateProductPayload(body, { partial = false } = {}) {
   const patch = {};
+  const safeBody = body || {};
 
-  if (!partial || body.name != null) {
-    const name = sanitizeText(body.name, 80);
-    if (!name) return { ok: false, error: "name obrigatorio" };
-    patch.name = name;
+  if (!partial || safeBody.name != null) {
+    const result = productNameSchema.safeParse(safeBody.name);
+    if (!result.success) return { ok: false, error: getSchemaErrorMessage(result, "Nome do produto é obrigatório.") };
+    patch.name = result.data;
   }
 
-  if (!partial || body.sector != null) {
-    const sector = normalizeSector(body.sector);
-    if (!ALLOWED_SECTORS.has(sector)) return { ok: false, error: "sector invalido" };
-    patch.sector = sector;
+  if (!partial || safeBody.sector != null) {
+    const result = sectorSchema.safeParse(safeBody.sector);
+    if (!result.success) return { ok: false, error: getSchemaErrorMessage(result, "Setor inválido.") };
+    patch.sector = result.data;
   }
 
-  if (!partial || body.unit != null) {
-    const unit = sanitizeText(body.unit, 10);
-    if (!ALLOWED_UNITS.has(unit)) return { ok: false, error: "unit invalida" };
-    patch.unit = unit;
+  if (!partial || safeBody.unit != null) {
+    const result = unitSchema.safeParse(safeBody.unit);
+    if (!result.success) return { ok: false, error: getSchemaErrorMessage(result, "Unidade inválida.") };
+    patch.unit = result.data;
   }
 
-  if (!partial || body.minQty != null) {
-    const minQty = parseNonNegativeInt(body.minQty);
-    if (minQty == null) return { ok: false, error: "minQty invalido" };
-    patch.minQty = minQty;
+  if (!partial || safeBody.minQty != null) {
+    const result = minQtySchema.safeParse(safeBody.minQty);
+    if (!result.success) return { ok: false, error: getSchemaErrorMessage(result, "Quantidade mínima inválida.") };
+    patch.minQty = result.data;
   }
 
-  if (body.qty != null) {
-    const qty = parseNonNegativeInt(body.qty);
-    if (qty == null) return { ok: false, error: "qty invalida" };
-    patch.qty = qty;
+  if (safeBody.qty != null) {
+    const result = qtySchema.safeParse(safeBody.qty);
+    if (!result.success) return { ok: false, error: getSchemaErrorMessage(result, "Quantidade inválida.") };
+    patch.qty = result.data;
   } else if (!partial) {
     patch.qty = 0;
   }
@@ -110,15 +158,14 @@ function validateProductPayload(body, { partial = false } = {}) {
 
 // Valida payload comum de entradas/saidas.
 function validateMovementPayload(body) {
-  const productId = sanitizeText(body.productId, 40);
-  const qty = parsePositiveInt(body.qty);
-  const date = validateDateOnly(body.date);
-
-  if (!productId) return { ok: false, error: "productId obrigatorio" };
-  if (qty == null) return { ok: false, error: "qty deve ser inteiro >= 1" };
-  if (!date) return { ok: false, error: "date invalida. Use YYYY-MM-DD" };
-
-  return { ok: true, productId, qty, date };
+  const result = movementSchema.safeParse(body || {});
+  if (!result.success) return { ok: false, error: getSchemaErrorMessage(result) };
+  return {
+    ok: true,
+    productId: result.data.productId,
+    qty: result.data.qty,
+    date: result.data.date
+  };
 }
 
 module.exports = {

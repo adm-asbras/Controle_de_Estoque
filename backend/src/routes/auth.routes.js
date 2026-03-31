@@ -5,10 +5,18 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const { requireAuth, requireAccountManager } = require("../middleware/auth");
 const { auditLog } = require("../utils/audit");
-const { authCookieOptions, clearAuthCookieOptions } = require("../utils/security");
+const {
+  authCookieOptions,
+  clearAuthCookieOptions,
+  createCsrfToken,
+  csrfCookieOptions,
+  clearCsrfCookieOptions,
+  parseCookies
+} = require("../utils/security");
 const { asyncHandler } = require("../utils/async-handler");
 const { sanitizeText, validateCredentials } = require("../utils/validation");
 const { sendPasswordResetEmail } = require("../utils/email");
+const { logger } = require("../utils/logger");
 
 const router = express.Router();
 
@@ -31,23 +39,25 @@ router.post("/login", asyncHandler(async (req, res) => {
   const username = sanitizeText(req.body?.username, 32);
   const password = req.body?.password;
   if (!username || !password) {
-    return res.status(400).json({ error: "username e password obrigatorios" });
+    return res.status(400).json({ error: "Usuário e senha são obrigatórios." });
   }
 
   const user = await User.findOne({ username });
   if (!user) {
     auditLog(req, "auth.login.failed", { username });
-    return res.status(401).json({ error: "Credenciais invalidas" });
+    return res.status(401).json({ error: "Credenciais inválidas" });
   }
 
   const ok = await bcrypt.compare(password, user.passwordHash);
   if (!ok) {
     auditLog(req, "auth.login.failed", { username });
-    return res.status(401).json({ error: "Credenciais invalidas" });
+    return res.status(401).json({ error: "Credenciais inválidas" });
   }
 
   const token = signUserToken(user);
+  const csrfToken = createCsrfToken();
   res.cookie("access_token", token, authCookieOptions());
+  res.cookie("csrf_token", csrfToken, csrfCookieOptions());
   auditLog(req, "auth.login.success", { username: user.username, role: user.role });
   res.json({ role: user.role, username: user.username });
 }));
@@ -55,7 +65,7 @@ router.post("/login", asyncHandler(async (req, res) => {
 // Cadastro publico desativado por seguranca.
 router.post("/register", asyncHandler(async (req, res) => {
   auditLog(req, "auth.register.blocked_public");
-  return res.status(403).json({ message: "Cadastro publico desativado. Solicite criacao ao administrador." });
+  return res.status(403).json({ message: "Cadastro público desativado. Solicite criação ao administrador." });
 }));
 
 // Cadastro de usuario por admin gestor de contas.
@@ -63,7 +73,7 @@ router.post("/admin/users", requireAuth, requireAccountManager, asyncHandler(asy
   try {
     const { username, password, email, role } = req.body || {};
     if (!username || !password || !email) {
-      return res.status(400).json({ message: "username, password e email obrigatorios" });
+      return res.status(400).json({ message: "Usuário, senha e e-mail são obrigatórios." });
     }
 
     const validated = validateCredentials({ username, email, password });
@@ -76,7 +86,7 @@ router.post("/admin/users", requireAuth, requireAccountManager, asyncHandler(asy
       $or: [{ username: validated.username }, { email: validated.email }]
     });
     if (existingUser) {
-      return res.status(400).json({ message: "Usuario ou email ja cadastrado" });
+      return res.status(400).json({ message: "Usuário ou e-mail já cadastrado." });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -99,10 +109,10 @@ router.post("/admin/users", requireAuth, requireAccountManager, asyncHandler(asy
       username: user.username,
       email: user.email,
       role: user.role,
-      message: "Usuario criado com sucesso"
+      message: "Usuário criado com sucesso."
     });
   } catch (err) {
-    return res.status(500).json({ message: "Erro ao cadastrar usuario" });
+    return res.status(500).json({ message: "Erro ao cadastrar usuário." });
   }
 }));
 
@@ -119,20 +129,20 @@ router.put("/admin/users/:id/role", requireAuth, requireAccountManager, asyncHan
   const allowedRoles = new Set(["user", "admin_limited", "admin"]);
 
   if (!targetId || !allowedRoles.has(nextRole)) {
-    return res.status(400).json({ message: "role invalida" });
+    return res.status(400).json({ message: "Perfil de acesso inválido." });
   }
   if (targetId === req.user.id) {
-    return res.status(400).json({ message: "Nao e permitido alterar seu proprio acesso" });
+    return res.status(400).json({ message: "Não é permitido alterar seu próprio acesso." });
   }
 
   const target = await User.findById(targetId);
-  if (!target) return res.status(404).json({ message: "Usuario nao encontrado" });
+  if (!target) return res.status(404).json({ message: "Usuário não encontrado." });
 
   // Evita perder o unico gestor de contas do sistema.
   if (target.role === "admin" && nextRole !== "admin") {
     const adminCount = await User.countDocuments({ role: "admin" });
     if (adminCount <= 1) {
-      return res.status(400).json({ message: "Nao e permitido remover o ultimo gestor de contas" });
+      return res.status(400).json({ message: "Não é permitido remover o último gestor de contas." });
     }
   }
 
@@ -149,19 +159,19 @@ router.put("/admin/users/:id/role", requireAuth, requireAccountManager, asyncHan
 // Exclui conta (somente gestor de contas).
 router.delete("/admin/users/:id", requireAuth, requireAccountManager, asyncHandler(async (req, res) => {
   const targetId = sanitizeText(req.params?.id, 40);
-  if (!targetId) return res.status(400).json({ message: "id invalido" });
+  if (!targetId) return res.status(400).json({ message: "Identificador inválido." });
   if (targetId === req.user.id) {
-    return res.status(400).json({ message: "Nao e permitido excluir sua propria conta" });
+    return res.status(400).json({ message: "Não é permitido excluir sua própria conta." });
   }
 
   const target = await User.findById(targetId);
-  if (!target) return res.status(404).json({ message: "Usuario nao encontrado" });
+  if (!target) return res.status(404).json({ message: "Usuário não encontrado." });
 
   // Evita excluir o unico gestor de contas do sistema.
   if (target.role === "admin") {
     const adminCount = await User.countDocuments({ role: "admin" });
     if (adminCount <= 1) {
-      return res.status(400).json({ message: "Nao e permitido excluir o ultimo gestor de contas" });
+      return res.status(400).json({ message: "Não é permitido excluir o último gestor de contas." });
     }
   }
 
@@ -178,11 +188,16 @@ router.delete("/admin/users/:id", requireAuth, requireAccountManager, asyncHandl
 router.post("/logout", requireAuth, (req, res) => {
   auditLog(req, "auth.logout");
   res.clearCookie("access_token", clearAuthCookieOptions());
+  res.clearCookie("csrf_token", clearCsrfCookieOptions());
   res.status(204).send();
 });
 
 // Retorna sessao atual para o frontend montar contexto.
 router.get("/me", requireAuth, (req, res) => {
+  const cookies = parseCookies(req.headers.cookie || "");
+  if (!cookies.csrf_token) {
+    res.cookie("csrf_token", createCsrfToken(), csrfCookieOptions());
+  }
   res.json({ username: req.user.username, role: req.user.role });
 });
 
@@ -192,15 +207,15 @@ router.post("/change-password", requireAuth, asyncHandler(async (req, res) => {
   const newPassword = req.body?.newPassword || "";
 
   if (!currentPassword || !newPassword) {
-    return res.status(400).json({ error: "currentPassword e newPassword obrigatorios" });
+    return res.status(400).json({ error: "Senha atual e nova senha são obrigatórias." });
   }
   if (newPassword.length < 6) {
-    return res.status(400).json({ error: "senha fraca. Minimo 6 caracteres" });
+    return res.status(400).json({ error: "Senha fraca. Mínimo de 6 caracteres." });
   }
 
   const user = await User.findById(req.user.id);
   if (!user) {
-    return res.status(404).json({ error: "Usuario nao encontrado" });
+    return res.status(404).json({ error: "Usuário não encontrado." });
   }
 
   const currentPasswordOk = await bcrypt.compare(currentPassword, user.passwordHash);
@@ -228,7 +243,7 @@ router.post("/forgot-password", asyncHandler(async (req, res) => {
   const email = sanitizeText(req.body?.email, 120).toLowerCase();
 
   // Resposta generica para nao revelar se email existe.
-  const genericOk = { message: "Se o email existir, enviaremos um link para redefinicao." };
+  const genericOk = { message: "Se o e-mail existir, enviaremos um link para redefinição." };
   if (!email) return res.json(genericOk);
 
   const user = await User.findOne({ email });
@@ -254,7 +269,7 @@ router.post("/forgot-password", asyncHandler(async (req, res) => {
       auditLog(req, "auth.forgot_password.sent", { userId: user._id.toString() });
     })
     .catch((err) => {
-      console.error("Falha envio email reset:", err.message);
+      logger.error("auth.forgot_password.email_error", { errorMessage: err.message });
       auditLog(req, "auth.forgot_password.email_error", { userId: user._id.toString(), error: err.message });
     });
 
@@ -267,10 +282,10 @@ router.post("/reset-password", asyncHandler(async (req, res) => {
   const newPassword = req.body?.newPassword || "";
 
   if (!token || !newPassword) {
-    return res.status(400).json({ error: "token e newPassword obrigatorios" });
+    return res.status(400).json({ error: "Token e nova senha são obrigatórios." });
   }
   if (newPassword.length < 6) {
-    return res.status(400).json({ error: "senha fraca. Minimo 6 caracteres" });
+    return res.status(400).json({ error: "Senha fraca. Mínimo de 6 caracteres." });
   }
 
   const tokenHash = hashResetToken(token);
@@ -281,7 +296,7 @@ router.post("/reset-password", asyncHandler(async (req, res) => {
 
   if (!user) {
     auditLog(req, "auth.reset_password.invalid_token");
-    return res.status(400).json({ error: "Token invalido ou expirado" });
+    return res.status(400).json({ error: "Token inválido ou expirado." });
   }
 
   user.passwordHash = await bcrypt.hash(newPassword, 10);

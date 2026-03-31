@@ -1,3 +1,5 @@
+const { parseCookies } = require("../utils/security");
+
 // Limite de profundidade para evitar payloads recursivos abusivos.
 const MAX_RECURSION_DEPTH = 8;
 
@@ -24,4 +26,21 @@ function rejectNoSqlOperators(req, res, next) {
   next();
 }
 
-module.exports = { rejectNoSqlOperators };
+// Exige token CSRF para mutacoes autenticadas (double-submit cookie).
+function requireCsrf(req, res, next) {
+  const method = (req.method || "GET").toUpperCase();
+  if (["GET", "HEAD", "OPTIONS"].includes(method)) return next();
+
+  const cookies = parseCookies(req.headers.cookie || "");
+  if (!cookies.access_token) return next();
+
+  const cookieToken = cookies.csrf_token || "";
+  const headerToken = req.headers["x-csrf-token"] || "";
+  if (!cookieToken || !headerToken || cookieToken !== headerToken) {
+    return res.status(403).json({ error: "CSRF token invalido ou ausente" });
+  }
+
+  next();
+}
+
+module.exports = { rejectNoSqlOperators, requireCsrf };

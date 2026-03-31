@@ -10,6 +10,7 @@ import AdminProducts from "./pages/AdminProducts";
 import AdminEntries from "./pages/AdminEntries";
 import AdminReports from "./pages/AdminReports";
 import AdminUsers from "./pages/AdminUsers";
+import RequestsPage from "./pages/Requests";
 import UserExits from "./pages/UserExits";
 
 // Define o roteamento principal da SPA.
@@ -63,12 +64,20 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/solicitacoes"
+              element={
+                <ProtectedRoute>
+                  <RequestsPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Rota privada de usuario autenticado. */}
             <Route
               path="/usuario/saidas"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute role={["admin", "admin_limited"]}>
                   <UserExits />
                 </ProtectedRoute>
               }

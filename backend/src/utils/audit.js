@@ -1,3 +1,5 @@
+const { logger } = require("./logger");
+
 // Extrai IP real considerando cabecalho de proxy reverso.
 function getRequestIp(req) {
   const forwarded = req.headers["x-forwarded-for"];
@@ -20,7 +22,7 @@ function auditLog(req, action, extra = {}) {
     ...extra
   };
 
-  console.log("[AUDIT]", JSON.stringify(payload));
+  logger.info("audit.event", payload);
 }
 
 module.exports = { auditLog };

@@ -43,15 +43,15 @@ export default function AdminUsers() {
     setSuccess("");
 
     if (!form.username || !form.email || !form.password) {
-      setError("Preencha todos os campos obrigatorios");
+      setError("Preencha todos os campos obrigatórios");
       return;
     }
     if (form.password !== form.confirmPassword) {
-      setError("As senhas nao conferem");
+      setError("As senhas não conferem");
       return;
     }
     if (form.password.length < 6) {
-      setError("A senha deve ter no minimo 6 caracteres");
+      setError("A senha deve ter no mínimo 6 caracteres");
       return;
     }
 
@@ -62,7 +62,7 @@ export default function AdminUsers() {
         password: form.password,
         role: form.role
       });
-      setSuccess(`Usuario ${data.username} criado com sucesso`);
+      setSuccess(`Usuário ${data.username} criado com sucesso`);
       setForm({
         username: "",
         email: "",
@@ -102,7 +102,7 @@ export default function AdminUsers() {
     setBusyUserId(userId);
     try {
       await api.deleteUser(userId);
-      setSuccess("Conta excluida com sucesso");
+      setSuccess("Conta excluída com sucesso");
       await loadUsers();
     } catch (err) {
       setError(err.message);
@@ -113,7 +113,7 @@ export default function AdminUsers() {
 
   return (
     <div className="container" style={{ paddingTop: 16, paddingBottom: 16 }}>
-      <h2 className="page-title">Gestao de Contas</h2>
+      <h2 className="page-title">Gestão de Contas</h2>
       {error && <p style={{ color: "var(--danger)" }}>{error}</p>}
       {success && <p style={{ color: "var(--accent)" }}>{success}</p>}
 
@@ -123,7 +123,7 @@ export default function AdminUsers() {
           <form onSubmit={createUser} style={{ display: "grid", gap: 10 }}>
             <input
               type="text"
-              placeholder="Usuario"
+              placeholder="Usuário"
               value={form.username}
               onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
             />
@@ -146,11 +146,11 @@ export default function AdminUsers() {
               onChange={(e) => setForm((f) => ({ ...f, confirmPassword: e.target.value }))}
             />
             <select value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}>
-              <option value="user">Usuario</option>
+              <option value="user">Usuário</option>
               <option value="admin_limited">Administrador (sem cadastro)</option>
-              <option value="admin">Administrador (gestao de contas)</option>
+              <option value="admin">Administrador (gestão de contas)</option>
             </select>
-            <button>Criar usuario</button>
+            <button>Criar usuário</button>
           </form>
         </div>
 
@@ -173,7 +173,7 @@ export default function AdminUsers() {
                       ? "badge"
                       : "badge ok";
                   const roleBadgeLabel =
-                    u.role === "admin" ? "Gestor de contas" : u.role === "admin_limited" ? "Administrador" : "Usuario";
+                    u.role === "admin" ? "Gestor de contas" : u.role === "admin_limited" ? "Administrador" : "Usuário";
 
                   return (
                     <div key={u._id} className="account-item">
@@ -181,7 +181,7 @@ export default function AdminUsers() {
                         <div>
                           <div className="account-name">
                             {u.username}
-                            {isSelf ? <span className="small"> (voce)</span> : null}
+                            {isSelf ? <span className="small"> (você)</span> : null}
                           </div>
                           <div className="small">{u.email}</div>
                         </div>
@@ -196,7 +196,7 @@ export default function AdminUsers() {
                             disabled={disabled}
                             onChange={(e) => changeRole(u._id, e.target.value)}
                           >
-                            <option value="user">Usuario</option>
+                            <option value="user">Usuário</option>
                             <option value="admin_limited">Administrador (sem cadastro)</option>
                             <option value="admin">Administrador (gestor de contas)</option>
                           </select>
@@ -205,7 +205,7 @@ export default function AdminUsers() {
                           className="secondary"
                           disabled={disabled}
                           onClick={() => removeUser(u._id, u.username)}
-                          title={isSelf ? "Voce nao pode excluir sua propria conta" : "Excluir conta"}
+                          title={isSelf ? "Você não pode excluir sua própria conta" : "Excluir conta"}
                         >
                           Excluir
                         </button>
@@ -217,7 +217,7 @@ export default function AdminUsers() {
             </div>
           )}
           <div className="small" style={{ marginTop: 10 }}>
-            Permissao atual: somente gestor de contas pode alterar acesso ou excluir contas.
+            Permissão atual: somente gestor de contas pode alterar acesso ou excluir contas.
           </div>
         </div>
       </div>

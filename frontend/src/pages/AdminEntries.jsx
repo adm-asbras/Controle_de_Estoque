@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
-
-const SECTORS = ["Expediente", "Escritorio", "Limpeza", "Copa"];
+import { SECTORS } from "../constants/inventory";
 
 // Gera a data de hoje no formato esperado pelo input type="date".
 function getTodayLocalInputValue() {
@@ -75,7 +74,7 @@ export default function AdminEntries() {
 
       <div className="grid two">
         <div className="card" style={{ padding: 16 }}>
-          <h3 style={{ marginTop: 0 }}>Lancar entrada</h3>
+          <h3 style={{ marginTop: 0 }}>Lançar entrada</h3>
           <form onSubmit={create} style={{ display: "grid", gap: 10 }}>
             <select value={form.sector} onChange={(e) => setForm((f) => ({ ...f, sector: e.target.value, productId: "" }))}>
               {SECTORS.map((s) => (
@@ -110,7 +109,7 @@ export default function AdminEntries() {
               </div>
             </div>
 
-            <button>Lancar entrada</button>
+            <button>Lançar entrada</button>
             <div className="small">Entradas incrementam o estoque automaticamente.</div>
           </form>
         </div>
@@ -118,13 +117,13 @@ export default function AdminEntries() {
         <div className="card" style={{ padding: 16 }}>
           <h3 style={{ marginTop: 0 }}>Dica</h3>
           <p className="small" style={{ marginTop: 0 }}>
-            Selecione a categoria para facilitar a escolha do produto e manter o lancamento organizado.
+            Selecione a categoria para facilitar a escolha do produto e manter o lançamento organizado.
           </p>
         </div>
       </div>
 
       <div className="card" style={{ padding: 16, marginTop: 14 }}>
-        <h3 style={{ marginTop: 0 }}>Historico de entradas</h3>
+          <h3 style={{ marginTop: 0 }}>Histórico de entradas</h3>
         <table className="table">
           <thead>
             <tr>
@@ -133,7 +132,7 @@ export default function AdminEntries() {
               <th>Categoria</th>
               <th>Unidade</th>
               <th>Quantidade</th>
-              <th>Lancado por</th>
+              <th>Lançado por</th>
             </tr>
           </thead>
           <tbody>

@@ -6,7 +6,8 @@ import logo from "../assets/logo.avif";
 
 // Tela de troca de senha para usuario autenticado.
 export default function ChangePassword() {
-  const backPath = auth.getRole() === "admin" ? "/admin/produtos" : "/usuario/saidas";
+  const role = auth.getRole();
+  const backPath = role === "admin" || role === "admin_limited" ? "/admin/produtos" : "/solicitacoes";
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

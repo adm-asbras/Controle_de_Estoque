@@ -1,18 +1,30 @@
-const KEY_ROLE = "estoque_role";
-const KEY_USER = "estoque_user";
+let session = null;
+const listeners = new Set();
 
-// Estado de sessao minimo salvo no navegador para UX.
-// O token real fica no cookie HttpOnly; aqui guardamos apenas dados de exibicao.
+function notify() {
+  listeners.forEach((listener) => listener());
+}
+
+// Estado de sessao em memoria.
+// A autorizacao real continua no backend (cookie HttpOnly + validacao por rota).
 export const auth = {
-  getRole: () => localStorage.getItem(KEY_ROLE),
-  getUsername: () => localStorage.getItem(KEY_USER),
-  isLogged: () => !!localStorage.getItem(KEY_ROLE) && !!localStorage.getItem(KEY_USER),
+  getSession: () => session,
+  getRole: () => session?.role || null,
+  getUsername: () => session?.username || null,
+  isLogged: () => !!session?.role && !!session?.username,
   saveSession: ({ role, username }) => {
-    localStorage.setItem(KEY_ROLE, role);
-    localStorage.setItem(KEY_USER, username);
+    session = role && username ? { role, username } : null;
+    notify();
   },
   logout: () => {
-    localStorage.removeItem(KEY_ROLE);
-    localStorage.removeItem(KEY_USER);
+    session = null;
+    notify();
   }
 };
+
+export function subscribeAuth(listener) {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
