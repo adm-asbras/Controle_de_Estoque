@@ -41,8 +41,15 @@ async function refreshCsrfFromSession() {
 async function request(path, options = {}, retry = true) {
   const method = (options.method || "GET").toUpperCase();
   const isMutating = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const isPublicAuthRoute =
+    normalizedPath === "/api/auth/login" ||
+    normalizedPath === "/api/auth/register" ||
+    normalizedPath === "/api/auth/forgot-password" ||
+    normalizedPath === "/api/auth/reset-password";
+
   let csrfToken = isMutating ? (auth.getCsrfToken() || getCookie("csrf_token")) : "";
-  if (isMutating && !csrfToken) {
+  if (isMutating && !csrfToken && !isPublicAuthRoute) {
     csrfToken = (await refreshCsrfFromSession()) || getCookie("csrf_token");
   }
   const headers = {
