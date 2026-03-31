@@ -31,7 +31,11 @@ function buildUrl(path) {
 async function request(path, options = {}) {
   const method = (options.method || "GET").toUpperCase();
   const isMutating = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
-  const csrfToken = isMutating ? getCookie("csrf_token") : "";
+  let csrfToken = isMutating ? getCookie("csrf_token") : "";
+  if (isMutating && !csrfToken) {
+    await fetch(buildUrl("/api/auth/me"), { credentials: "include" }).catch(() => {});
+    csrfToken = getCookie("csrf_token");
+  }
   const headers = {
     ...(options.body ? { "Content-Type": "application/json" } : {}),
     ...(csrfToken ? { [CSRF_HEADER]: csrfToken } : {}),
