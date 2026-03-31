@@ -28,7 +28,7 @@ function buildUrl(path) {
 }
 
 // Wrapper padrao de fetch para JSON usando cookie de sessao.
-async function request(path, options = {}) {
+async function request(path, options = {}, retry = true) {
   const method = (options.method || "GET").toUpperCase();
   const isMutating = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
   let csrfToken = isMutating ? getCookie("csrf_token") : "";
@@ -51,6 +51,10 @@ async function request(path, options = {}) {
   if (res.status === 204) return null;
 
   const data = await res.json().catch(() => ({}));
+  if (res.status === 403 && retry && String(data?.error || "").toLowerCase().includes("csrf")) {
+    await fetch(buildUrl("/api/auth/me"), { credentials: "include" }).catch(() => {});
+    return request(path, options, false);
+  }
   if (!res.ok) throw new Error(data?.error || data?.message || "Erro na requisicao");
   return data;
 }
