@@ -59,7 +59,7 @@ router.post("/login", asyncHandler(async (req, res) => {
   res.cookie("access_token", token, authCookieOptions());
   res.cookie("csrf_token", csrfToken, csrfCookieOptions());
   auditLog(req, "auth.login.success", { username: user.username, role: user.role });
-  res.json({ role: user.role, username: user.username });
+  res.json({ role: user.role, username: user.username, csrfToken });
 }));
 
 // Cadastro publico desativado por seguranca.
@@ -195,10 +195,12 @@ router.post("/logout", requireAuth, (req, res) => {
 // Retorna sessao atual para o frontend montar contexto.
 router.get("/me", requireAuth, (req, res) => {
   const cookies = parseCookies(req.headers.cookie || "");
-  if (!cookies.csrf_token) {
-    res.cookie("csrf_token", createCsrfToken(), csrfCookieOptions());
+  let csrfToken = cookies.csrf_token || "";
+  if (!csrfToken) {
+    csrfToken = createCsrfToken();
+    res.cookie("csrf_token", csrfToken, csrfCookieOptions());
   }
-  res.json({ username: req.user.username, role: req.user.role });
+  res.json({ username: req.user.username, role: req.user.role, csrfToken });
 });
 
 // Permite trocar senha estando autenticado.

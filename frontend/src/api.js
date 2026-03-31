@@ -28,13 +28,20 @@ function buildUrl(path) {
 }
 
 // Wrapper padrao de fetch para JSON usando cookie de sessao.
+async function refreshCsrfFromSession() {
+  const res = await fetch(buildUrl("/api/auth/me"), { credentials: "include" }).catch(() => null);
+  if (!res || !res.ok) return null;
+  const data = await res.json().catch(() => null);
+  if (data && data.username && data.role) auth.saveSession(data);
+  return data?.csrfToken || null;
+}
+
 async function request(path, options = {}, retry = true) {
   const method = (options.method || "GET").toUpperCase();
   const isMutating = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
-  let csrfToken = isMutating ? getCookie("csrf_token") : "";
+  let csrfToken = isMutating ? (auth.getCsrfToken() || getCookie("csrf_token")) : "";
   if (isMutating && !csrfToken) {
-    await fetch(buildUrl("/api/auth/me"), { credentials: "include" }).catch(() => {});
-    csrfToken = getCookie("csrf_token");
+    csrfToken = (await refreshCsrfFromSession()) || getCookie("csrf_token");
   }
   const headers = {
     ...(options.body ? { "Content-Type": "application/json" } : {}),
@@ -52,7 +59,7 @@ async function request(path, options = {}, retry = true) {
 
   const data = await res.json().catch(() => ({}));
   if (res.status === 403 && retry && String(data?.error || "").toLowerCase().includes("csrf")) {
-    await fetch(buildUrl("/api/auth/me"), { credentials: "include" }).catch(() => {});
+    await refreshCsrfFromSession();
     return request(path, options, false);
   }
   if (!res.ok) throw new Error(data?.error || data?.message || "Erro na requisicao");
