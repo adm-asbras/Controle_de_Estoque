@@ -49,8 +49,8 @@ const UNREAD_RESPONSE_ROW_GAP_PX = 6;
 const HISTORY_VISIBLE_ROWS = 10;
 const HISTORY_ROW_PX = 39;
 const HISTORY_HEADER_PX = 43;
-const REQUESTS_POLL_MS_USER = 3000;
-const REQUESTS_POLL_MS_ADMIN = 3000;
+const REQUESTS_POLL_MS_USER = 15000;
+const REQUESTS_POLL_MS_ADMIN = 15000;
 
 // Tela de solicitações com aprovação administrativa.
 export default function RequestsPage() {
