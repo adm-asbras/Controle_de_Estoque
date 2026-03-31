@@ -30,6 +30,11 @@ function rejectNoSqlOperators(req, res, next) {
 function requireCsrf(req, res, next) {
   const method = (req.method || "GET").toUpperCase();
   if (["GET", "HEAD", "OPTIONS"].includes(method)) return next();
+  // Rotas de autenticacao iniciais nao exigem CSRF.
+  if (req.path === "/api/auth/login") return next();
+  if (req.path === "/api/auth/forgot-password") return next();
+  if (req.path === "/api/auth/reset-password") return next();
+  if (req.path === "/api/auth/register") return next();
 
   const cookies = parseCookies(req.headers.cookie || "");
   if (!cookies.access_token) return next();

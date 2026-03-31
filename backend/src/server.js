@@ -62,7 +62,12 @@ function createApp() {
     max: 10,
     standardHeaders: true,
     legacyHeaders: false,
-    message: { error: "Muitas tentativas. Tente novamente em 15 minutos." }
+    message: { error: "Muitas tentativas. Tente novamente em 15 minutos." },
+    keyGenerator: (req) => {
+      const rawUser = typeof req.body?.username === "string" ? req.body.username.trim().toLowerCase() : "";
+      const userPart = rawUser ? `user:${rawUser}` : "user:anon";
+      return `${req.ip}|${userPart}`;
+    }
   });
   app.use("/api/auth/login", authRateLimit);
 
