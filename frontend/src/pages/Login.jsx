@@ -24,7 +24,9 @@ export default function Login() {
         session = null;
       }
       if (!session) {
-        setError("Sessao nao confirmada. Em guia anonima o navegador pode bloquear cookies. Tente abrir fora do anonimo.");
+        setError(
+          "Sessão não confirmada. Em guia anônima o navegador pode bloquear cookies, então o login não persiste. Abra em uma guia normal ou permita cookies."
+        );
         return;
       }
       auth.saveSession(session);
