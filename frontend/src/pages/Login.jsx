@@ -16,9 +16,19 @@ export default function Login() {
     e.preventDefault();
     setError("");
     try {
-      const data = await api.login({ username, password });
-      auth.saveSession(data);
-      if (data.role === "admin" || data.role === "admin_limited") navigate("/admin/produtos");
+      await api.login({ username, password });
+      let session = null;
+      try {
+        session = await api.me();
+      } catch (_) {
+        session = null;
+      }
+      if (!session) {
+        setError("Sessao nao confirmada. Em guia anonima o navegador pode bloquear cookies. Tente abrir fora do anonimo.");
+        return;
+      }
+      auth.saveSession(session);
+      if (session.role === "admin" || session.role === "admin_limited") navigate("/admin/produtos");
       else navigate("/solicitacoes");
     } catch (err) {
       setError(err.message);
