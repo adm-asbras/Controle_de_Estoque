@@ -70,7 +70,11 @@ test("POST /api/auth/login autentica usuario valido", async () => {
       const body = await res.json();
 
       assert.equal(res.status, 200);
-      assert.deepEqual(body, { username: "alice", role: "admin" });
+      assert.equal(body.username, "alice");
+      assert.equal(body.role, "admin");
+      assert.match(body.csrfToken || "", /^[a-f0-9]{64}$/);
+      assert.equal(typeof body.accessToken, "string");
+      assert.ok(body.accessToken.length > 20);
       assert.match(res.headers.get("set-cookie") || "", /access_token=/);
     });
   } finally {

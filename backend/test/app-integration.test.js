@@ -42,7 +42,9 @@ test("GET /api/auth/me aceita sessao via cookie", async () => {
     const body = await res.json();
 
     assert.equal(res.status, 200);
-    assert.deepEqual(body, { username: "carol", role: "admin" });
+    assert.equal(body.username, "carol");
+    assert.equal(body.role, "admin");
+    assert.match(body.csrfToken || "", /^[a-f0-9]{64}$/);
   });
 });
 
