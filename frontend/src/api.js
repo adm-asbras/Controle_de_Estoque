@@ -20,6 +20,18 @@ function getCookie(name) {
   return match ? decodeURIComponent(match[1]) : "";
 }
 
+function buildAuthHeader(path) {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const isPublicAuthRoute =
+    normalizedPath === "/api/auth/login" ||
+    normalizedPath === "/api/auth/register" ||
+    normalizedPath === "/api/auth/forgot-password" ||
+    normalizedPath === "/api/auth/reset-password";
+  if (isPublicAuthRoute) return {};
+  const accessToken = auth.getAccessToken();
+  return accessToken ? { Authorization: `Bearer ${accessToken}` } : {};
+}
+
 // Garante que sempre montamos um caminho absoluto coerente para a API.
 function buildUrl(path) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
@@ -29,9 +41,12 @@ function buildUrl(path) {
   return `${API_URL}${normalizedPath}`;
 }
 
-// Wrapper padrao de fetch para JSON usando cookie de sessao.
+// Wrapper padrao de fetch para JSON usando cookie e fallback Bearer.
 async function refreshCsrfFromSession() {
-  const res = await fetch(buildUrl("/api/auth/me"), { credentials: "include" }).catch(() => null);
+  const res = await fetch(buildUrl("/api/auth/me"), {
+    credentials: "include",
+    headers: buildAuthHeader("/api/auth/me")
+  }).catch(() => null);
   if (!res || !res.ok) return null;
   const data = await res.json().catch(() => null);
   if (data && data.username && data.role) auth.saveSession(data);
@@ -47,6 +62,7 @@ async function request(path, options = {}, retry = true) {
     normalizedPath === "/api/auth/register" ||
     normalizedPath === "/api/auth/forgot-password" ||
     normalizedPath === "/api/auth/reset-password";
+  const authHeader = buildAuthHeader(normalizedPath);
 
   let csrfToken = isMutating ? (auth.getCsrfToken() || getCookie("csrf_token")) : "";
   if (isMutating && !csrfToken && !isPublicAuthRoute) {
@@ -54,6 +70,7 @@ async function request(path, options = {}, retry = true) {
   }
   const headers = {
     ...(options.body ? { "Content-Type": "application/json" } : {}),
+    ...authHeader,
     ...(csrfToken ? { [CSRF_HEADER]: csrfToken } : {}),
     ...(options.headers || {})
   };
@@ -116,11 +133,11 @@ export const api = {
   createExit: (body) => request("/api/exits", { method: "POST", body: JSON.stringify(body) })
 };
 
-// Download de arquivos binarios (PDF/CSV) usando cookie de sessao.
+// Download de arquivos binarios (PDF/CSV) usando cookie e fallback Bearer.
 export async function downloadFile(path, filename) {
   const res = await fetch(buildUrl(path), {
     credentials: "include",
-    headers: {}
+    headers: buildAuthHeader(path)
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));

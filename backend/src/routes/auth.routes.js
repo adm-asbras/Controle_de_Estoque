@@ -59,7 +59,7 @@ router.post("/login", asyncHandler(async (req, res) => {
   res.cookie("access_token", token, authCookieOptions());
   res.cookie("csrf_token", csrfToken, csrfCookieOptions());
   auditLog(req, "auth.login.success", { username: user.username, role: user.role });
-  res.json({ role: user.role, username: user.username, csrfToken });
+  res.json({ role: user.role, username: user.username, csrfToken, accessToken: token });
 }));
 
 // Cadastro publico desativado por seguranca.

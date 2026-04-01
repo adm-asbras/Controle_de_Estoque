@@ -16,21 +16,31 @@ export default function Login() {
     e.preventDefault();
     setError("");
     try {
-      await api.login({ username, password });
+      const loginSession = await api.login({ username, password });
+      if (loginSession?.username && loginSession?.role) {
+        auth.saveSession(loginSession);
+      }
+
       let session = null;
       try {
         session = await api.me();
       } catch (_) {
         session = null;
       }
-      if (!session) {
+
+      if (session) {
+        auth.saveSession(session);
+      }
+
+      const activeSession = session || auth.getSession();
+      if (!activeSession) {
         setError(
-          "Sessão não confirmada. Em guia anônima o navegador pode bloquear cookies, então o login não persiste. Abra em uma guia normal ou permita cookies."
+          "Sessão não confirmada. Esse navegador pode bloquear cookies e autenticação em segundo plano. Tente abrir em uma guia normal."
         );
         return;
       }
-      auth.saveSession(session);
-      if (session.role === "admin" || session.role === "admin_limited") navigate("/admin/produtos");
+
+      if (activeSession.role === "admin" || activeSession.role === "admin_limited") navigate("/admin/produtos");
       else navigate("/solicitacoes");
     } catch (err) {
       setError(err.message);
