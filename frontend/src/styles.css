@@ -32,7 +32,12 @@
 *::-webkit-scrollbar-thumb:hover{
   background: linear-gradient(90deg, rgba(70,194,255,0.75), rgba(79,70,229,0.75));
 }
-html, body{ height:100%; }
+html, body{
+  height:100%;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
 body{
   margin:0;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
@@ -41,8 +46,8 @@ body{
               radial-gradient(900px 500px at 90% 20%, rgba(110,231,183,0.18), transparent 55%),
               linear-gradient(180deg, var(--bg1), var(--bg2));
 }
-#root{ min-height:100%; }
-.app-shell{ min-height:100vh; display:flex; flex-direction:column; }
+#root{ min-height:100%; max-width: 100%; overflow-x: hidden; }
+.app-shell{ min-height:100vh; display:flex; flex-direction:column; max-width: 100%; overflow-x: hidden; }
 .app-main{ flex:1; }
 .app-footer{
   text-align:center;
@@ -644,15 +649,24 @@ button.secondary:active:not(:disabled){
 
 /* Responsive adjustments for mobile */
 @media (max-width: 900px) {
-  .container{ padding: 0 12px; }
+  .container{
+    padding: 0 12px;
+    max-width: 100%;
+    overflow-x: clip;
+  }
   .top-header{
     position: static;
+    width: 100%;
+    max-width: 100%;
   }
   .top-header-inner{
     min-height: 54px;
     padding: 8px 12px;
     flex-direction: row;
     align-items: center;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
   .top-actions{
     flex-wrap: nowrap;
@@ -669,6 +683,9 @@ button.secondary:active:not(:disabled){
     height: auto;
     padding: 8px 12px 10px;
     gap: 8px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
   .top-header ~ .left-sidebar ~ .app-main,
   .top-header ~ .left-sidebar ~ .app-footer{
@@ -708,11 +725,32 @@ button.secondary:active:not(:disabled){
     display: flex;
     align-items: center;
     gap: 6px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
   .menu-actions-toggle{
     display: inline-flex !important;
     margin-left: 0;
     flex-shrink: 0;
+  }
+  .menu-track{
+    width: 100%;
+    max-width: 100%;
+    flex: 1 1 auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+  .menu-track::-webkit-scrollbar{
+    display: none;
+  }
+  .menu-track .navlink{
+    flex: 0 0 auto;
+  }
+  .menu-track .navlink-label{
+    width: auto;
+    min-width: max-content;
   }
   .nav-section-title{ margin-top: 0; }
   .menu-actions{
