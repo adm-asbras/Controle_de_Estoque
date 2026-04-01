@@ -456,22 +456,20 @@ export default function RequestsPage() {
               )}
             </div>
           )}
-
-          <h3 style={{ marginTop: 0 }}>Visão geral</h3>
-          <div className="small" style={{ marginBottom: 8 }}>
-            {isAdmin ? "Você pode aprovar/rejeitar solicitações pendentes." : "Acompanhe aqui o status das suas solicitações."}
-          </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <button className={statusFilter === "all" ? "" : "secondary"} onClick={() => setStatusFilter("all")}>Todas</button>
-            <button className={statusFilter === "pending" ? "" : "secondary"} onClick={() => setStatusFilter("pending")}>Pendentes</button>
-            <button className={statusFilter === "approved" ? "" : "secondary"} onClick={() => setStatusFilter("approved")}>Aprovadas</button>
-            <button className={statusFilter === "rejected" ? "" : "secondary"} onClick={() => setStatusFilter("rejected")}>Rejeitadas</button>
-          </div>
         </div>
       </div>
 
       <div className="card" style={{ padding: 16, marginTop: 14 }}>
         <h3 style={{ marginTop: 0 }}>Histórico de solicitações</h3>
+        <div className="small" style={{ marginBottom: 8 }}>
+          {isAdmin ? "Você pode aprovar/rejeitar solicitações pendentes." : "Acompanhe aqui o status das suas solicitações."}
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+          <button className={statusFilter === "all" ? "" : "secondary"} onClick={() => setStatusFilter("all")}>Todas</button>
+          <button className={statusFilter === "pending" ? "" : "secondary"} onClick={() => setStatusFilter("pending")}>Pendentes</button>
+          <button className={statusFilter === "approved" ? "" : "secondary"} onClick={() => setStatusFilter("approved")}>Aprovadas</button>
+          <button className={statusFilter === "rejected" ? "" : "secondary"} onClick={() => setStatusFilter("rejected")}>Rejeitadas</button>
+        </div>
         <div
           className="request-history-scroll"
           style={{
@@ -556,7 +554,18 @@ export default function RequestsPage() {
               })}
               {requests.length === 0 && (
                 <tr>
-                  <td colSpan={isAdmin ? 9 : 8} className="small">Nenhuma solicitação encontrada para o filtro atual.</td>
+                  <td colSpan={isAdmin ? 9 : 8} className="small">
+                    {statusFilter === "all" ? (
+                      "Nenhuma solicitação encontrada para o filtro atual."
+                    ) : (
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                        <span>Nenhuma solicitação encontrada em {statusFilter === "approved" ? "Aprovadas" : statusFilter === "rejected" ? "Rejeitadas" : "Pendentes"}.</span>
+                        <button type="button" className="secondary" onClick={() => setStatusFilter("all")}>
+                          Ver todas
+                        </button>
+                      </div>
+                    )}
+                  </td>
                 </tr>
               )}
             </tbody>
