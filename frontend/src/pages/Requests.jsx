@@ -435,22 +435,24 @@ export default function RequestsPage() {
               {filteredProducts.length === 0 ? (
                 <p className="small">Nenhum produto cadastrado nesta categoria.</p>
               ) : (
-                <table className="table">
-                  <thead>
-                    <tr><th>Produto</th><th>Unidade</th><th>Qtd</th><th>Min</th><th>Status</th></tr>
-                  </thead>
-                  <tbody>
-                    {filteredProducts.map((p) => (
-                      <tr key={p._id}>
-                        <td>{p.name}</td>
-                        <td>{p.unit}</td>
-                        <td>{p.qty}</td>
-                        <td>{p.minQty}</td>
-                        <td>{p.needsRestock ? <span className="badge danger">REPOR</span> : <span className="badge ok">OK</span>}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="products-table-scroll">
+                  <table className="table">
+                    <thead>
+                      <tr><th>Produto</th><th>Unidade</th><th>Qtd</th><th>Min</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                      {filteredProducts.map((p) => (
+                        <tr key={p._id}>
+                          <td>{p.name}</td>
+                          <td>{p.unit}</td>
+                          <td>{p.qty}</td>
+                          <td>{p.minQty}</td>
+                          <td>{p.needsRestock ? <span className="badge danger">REPOR</span> : <span className="badge ok">OK</span>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           )}

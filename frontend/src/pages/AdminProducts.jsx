@@ -382,44 +382,46 @@ export default function AdminProducts() {
         <div className="small" style={{ marginTop: 8, marginBottom: 10 }}>
           Janela de consumo: 60 dias | Cobertura alvo: 30 dias
         </div>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Produto</th>
-              <th>Categoria</th>
-              <th>Consumo médio/dia</th>
-              <th>Dias até ruptura</th>
-              <th>Sugerido</th>
-              <th>Urgência</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recommendations.map((item) => (
-              <tr key={item.productId}>
-                <td>{item.productName}</td>
-                <td><span className="badge">{item.sector}</span></td>
-                <td>{item.avgDailyConsumption}</td>
-                <td>{item.daysToStockout == null ? "-" : item.daysToStockout}</td>
-                <td>
-                  <span className={item.suggestedQty > 0 ? "badge warn" : "badge"}>
-                    {item.suggestedQty}
-                    {item.unit}
-                  </span>
-                </td>
-                <td>
-                  <span className={item.urgency === "alta" ? "badge danger" : item.urgency === "media" ? "badge warn" : "badge ok"}>
-                    {item.urgency}
-                  </span>
-                </td>
-              </tr>
-            ))}
-            {recommendations.length === 0 && (
+        <div className="products-table-scroll">
+          <table className="table">
+            <thead>
               <tr>
-                <td colSpan={6} className="small">Nenhuma sugestão no momento.</td>
+                <th>Produto</th>
+                <th>Categoria</th>
+                <th>Consumo médio/dia</th>
+                <th>Dias até ruptura</th>
+                <th>Sugerido</th>
+                <th>Urgência</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {recommendations.map((item) => (
+                <tr key={item.productId}>
+                  <td>{item.productName}</td>
+                  <td><span className="badge">{item.sector}</span></td>
+                  <td>{item.avgDailyConsumption}</td>
+                  <td>{item.daysToStockout == null ? "-" : item.daysToStockout}</td>
+                  <td>
+                    <span className={item.suggestedQty > 0 ? "badge warn" : "badge"}>
+                      {item.suggestedQty}
+                      {item.unit}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={item.urgency === "alta" ? "badge danger" : item.urgency === "media" ? "badge warn" : "badge ok"}>
+                      {item.urgency}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+              {recommendations.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="small">Nenhuma sugestão no momento.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="card" style={{ padding: 16, marginTop: 14 }}>
