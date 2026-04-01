@@ -298,79 +298,80 @@ export default function AdminProducts() {
 
       <div className="card" style={{ padding: 16, marginTop: 14 }}>
         <h3 style={{ marginTop: 0 }}>Produtos cadastrados</h3>
-
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Produto</th>
-              <th>Categoria</th>
-              <th>Unidade</th>
-              <th>Quantidade</th>
-              <th>Mínimo</th>
-              <th>Status</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {items.map((p) => (
-              <tr key={p._id}>
-                <td>
-                  <input value={p.name} onChange={(e) => patch(p._id, "name", e.target.value)} />
-                </td>
-
-                <td>
-                  <select value={p.sector} onChange={(e) => patch(p._id, "sector", e.target.value)}>
-                    {SECTORS.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-
-                <td>
-                  <select value={p.unit} onChange={(e) => patch(p._id, "unit", e.target.value)}>
-                    {UNITS.map((u) => (
-                      <option key={u} value={u}>
-                        {u}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-
-                <td>
-                  <input
-                    type="number"
-                    value={p.qty}
-                    onChange={(e) => patch(p._id, "qty", Number(e.target.value))}
-                  />
-                </td>
-
-                <td>
-                  <input
-                    type="number"
-                    value={p.minQty}
-                    onChange={(e) => patch(p._id, "minQty", Number(e.target.value))}
-                  />
-                </td>
-
-                <td>{p.needsRestock ? <span className="badge danger">REPOR</span> : <span className="badge ok">OK</span>}</td>
-
-                <td>
-                  <div style={{ display: "grid", gap: 8 }}>
-                    <button className="secondary" onClick={() => loadProductHistory(p)}>
-                      Histórico
-                    </button>
-                    <button className="secondary" onClick={() => remove(p._id)}>
-                      Excluir
-                    </button>
-                  </div>
-                </td>
+        <div className="products-table-scroll">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Categoria</th>
+                <th>Unidade</th>
+                <th>Quantidade</th>
+                <th>Mínimo</th>
+                <th>Status</th>
+                <th>Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+
+            <tbody>
+              {items.map((p) => (
+                <tr key={p._id}>
+                  <td>
+                    <input value={p.name} onChange={(e) => patch(p._id, "name", e.target.value)} />
+                  </td>
+
+                  <td>
+                    <select value={p.sector} onChange={(e) => patch(p._id, "sector", e.target.value)}>
+                      {SECTORS.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+
+                  <td>
+                    <select value={p.unit} onChange={(e) => patch(p._id, "unit", e.target.value)}>
+                      {UNITS.map((u) => (
+                        <option key={u} value={u}>
+                          {u}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+
+                  <td>
+                    <input
+                      type="number"
+                      value={p.qty}
+                      onChange={(e) => patch(p._id, "qty", Number(e.target.value))}
+                    />
+                  </td>
+
+                  <td>
+                    <input
+                      type="number"
+                      value={p.minQty}
+                      onChange={(e) => patch(p._id, "minQty", Number(e.target.value))}
+                    />
+                  </td>
+
+                  <td>{p.needsRestock ? <span className="badge danger">REPOR</span> : <span className="badge ok">OK</span>}</td>
+
+                  <td>
+                    <div style={{ display: "grid", gap: 8 }}>
+                      <button className="secondary" onClick={() => loadProductHistory(p)}>
+                        Histórico
+                      </button>
+                      <button className="secondary" onClick={() => remove(p._id)}>
+                        Excluir
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="card" style={{ padding: 16, marginTop: 14 }}>
