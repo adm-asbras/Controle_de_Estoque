@@ -159,7 +159,7 @@ export default function AdminProducts() {
           100% { transform: translateX(-50%); }
         }
         .restock-carousel {
-          animation: carouselScroll 35s linear infinite;
+          animation: carouselScroll 45s linear infinite;
           will-change: transform;
         }
         .restock-carousel:hover {
