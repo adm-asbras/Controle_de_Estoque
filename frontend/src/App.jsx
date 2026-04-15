@@ -93,7 +93,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </main>
-        <footer className="app-footer">&copy; 2026 Todos os direitos reservados. - Desenvolvido por Erick Neves</footer>
+        <footer className="app-footer">&copy; 2026 ASBRAS. Todos os direitos reservados.</footer>
       </div>
     </BrowserRouter>
   );
