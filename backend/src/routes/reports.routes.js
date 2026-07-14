@@ -1,4 +1,5 @@
 const express = require("express");
+const path = require("path");
 const { Parser } = require("json2csv");
 const PDFDocument = require("pdfkit");
 
@@ -22,13 +23,24 @@ const {
   buildStockCsvRows,
   buildStockMovementRows,
   buildCategoryAggregateRows,
-  buildMovementCsvRows,
-  renderCategorySummary
+  buildMovementCsvRows
 } = require("../utils/report-data");
 
 const router = express.Router();
 const PRODUCT_SECTORS = ["Expediente", "Escritorio", "Limpeza", "Copa"];
 const STOCK_STATUS_OPTIONS = ["all", "restock", "near", "attention"];
+const ASBRAS_LOGO_PATH = path.join(__dirname, "..", "assets", "logo-asbras.png");
+const PDF_COLORS = {
+  navy: "#12344D",
+  blue: "#1677B8",
+  lightBlue: "#EAF4FA",
+  border: "#C9DAE5",
+  text: "#1E293B",
+  muted: "#526579",
+  success: "#18794E",
+  warning: "#A16207",
+  danger: "#B42318"
+};
 
 function isNearRestock(product) {
   const nearLimit = product.minQty + Math.max(1, Math.ceil(product.minQty * 0.2));
@@ -74,6 +86,16 @@ function filterMovementsByProduct(movements, filters) {
   );
 }
 
+function formatProductFilters(filters) {
+  const statusLabels = {
+    all: "Todos os produtos",
+    restock: "Somente para repor",
+    near: "Somente perto de repor",
+    attention: "Para repor ou perto de repor"
+  };
+  return `Categoria: ${filters.sector || "Todas"}  |  Estoque: ${statusLabels[filters.stockStatus]}`;
+}
+
 // Traduz query de datas para filtro Mongo ou devolve erro amigavel na resposta.
 function getDateFilterFromQuery(req, res) {
   const { startDate, endDate } = req.query;
@@ -115,10 +137,38 @@ function setCsvHeaders(res, filename) {
   res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
 }
 
-function createPdf(res) {
-  const doc = new PDFDocument({ margin: 40 });
+function drawPdfHeader(doc, report) {
+  const { width } = doc.page;
+  doc.save();
+  doc.rect(0, 0, width, 108).fill(PDF_COLORS.navy);
+  doc.image(ASBRAS_LOGO_PATH, 40, 18, { fit: [58, 58] });
+  doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(15).text("Sistema de controle de material da ASBRAS", 112, 26);
+  doc.font("Helvetica").fontSize(9).fillColor("#D9E9F3").text(report.title, 112, 51);
+  if (report.subtitle) doc.fontSize(8).text(report.subtitle, 112, 68, { width: 420 });
+  doc.restore();
+  doc.y = 132;
+}
+
+function createPdf(res, report) {
+  const doc = new PDFDocument({ margin: 40, bufferPages: true });
   doc.pipe(res);
+  doc.on("pageAdded", () => drawPdfHeader(doc, report));
+  drawPdfHeader(doc, report);
   return doc;
+}
+
+function finalizePdf(doc) {
+  const { start, count } = doc.bufferedPageRange();
+  for (let index = start; index < start + count; index += 1) {
+    doc.switchToPage(index);
+    doc.save();
+    doc.strokeColor(PDF_COLORS.border).moveTo(40, doc.page.height - 46).lineTo(doc.page.width - 40, doc.page.height - 46).stroke();
+    doc.fillColor(PDF_COLORS.muted).font("Helvetica").fontSize(8);
+    doc.text("ASBRAS • Sistema de controle de material", 40, doc.page.height - 36);
+    doc.text(`Página ${index + 1} de ${count}`, doc.page.width - 130, doc.page.height - 36, { width: 90, align: "right" });
+    doc.restore();
+  }
+  doc.end();
 }
 
 function writeEntriesTable(doc, entries) {
@@ -236,6 +286,190 @@ function writeStockMonthlySummary(doc, rows) {
   doc.font("Helvetica");
 }
 
+function writeEmptyState(doc, message) {
+  doc.fillColor(PDF_COLORS.muted).font("Helvetica-Oblique").fontSize(10).text(message, { align: "center" });
+  doc.fillColor(PDF_COLORS.text).font("Helvetica");
+}
+
+function writeSectionTitle(doc, title) {
+  if (doc.y > doc.page.height - 110) doc.addPage();
+  doc.fillColor(PDF_COLORS.blue).font("Helvetica-Bold").fontSize(11).text(title);
+  doc.moveDown(0.35);
+}
+
+function writeTable(doc, columns, rows) {
+  const left = 40;
+  const tableWidth = doc.page.width - 80;
+  const padding = 6;
+  const drawHeader = () => {
+    const headerY = doc.y;
+    doc.rect(left, headerY, tableWidth, 22).fill(PDF_COLORS.blue);
+    let x = left;
+    doc.fillColor("#FFFFFF").font("Helvetica-Bold").fontSize(8);
+    columns.forEach((column) => {
+      doc.text(column.label, x + padding, headerY + 7, { width: column.width - padding * 2, align: column.align || "left" });
+      x += column.width;
+    });
+    doc.y = headerY + 22;
+  };
+
+  drawHeader();
+  rows.forEach((row, rowIndex) => {
+    doc.font("Helvetica").fontSize(8);
+    const heights = columns.map((column) => doc.heightOfString(String(row[column.key] ?? "-"), {
+      width: column.width - padding * 2,
+      align: column.align || "left"
+    }));
+    const rowHeight = Math.max(22, ...heights.map((height) => height + padding * 2));
+    if (doc.y + rowHeight > doc.page.height - 64) {
+      doc.addPage();
+      drawHeader();
+    }
+    const rowY = doc.y;
+    if (rowIndex % 2 === 0) doc.rect(left, rowY, tableWidth, rowHeight).fill(PDF_COLORS.lightBlue);
+    let x = left;
+    columns.forEach((column) => {
+      const value = String(row[column.key] ?? "-");
+      const color = column.color ? column.color(value, row) : PDF_COLORS.text;
+      doc.fillColor(color).font(column.bold ? "Helvetica-Bold" : "Helvetica").fontSize(8)
+        .text(value, x + padding, rowY + padding, { width: column.width - padding * 2, align: column.align || "left" });
+      x += column.width;
+    });
+    doc.strokeColor(PDF_COLORS.border).lineWidth(0.35).moveTo(left, rowY + rowHeight).lineTo(left + tableWidth, rowY + rowHeight).stroke();
+    doc.y = rowY + rowHeight;
+  });
+  doc.moveDown(0.65);
+}
+
+function getStockAlert(product) {
+  if (product.qty <= product.minQty) return "REPOR";
+  if (isNearRestock(product)) return "PERTO DE REPOR";
+  return "OK";
+}
+
+function stockStatusColor(value) {
+  if (value === "REPOR") return PDF_COLORS.danger;
+  if (value === "PERTO DE REPOR") return PDF_COLORS.warning;
+  return PDF_COLORS.success;
+}
+
+function writeStockReport(doc, products) {
+  if (products.length === 0) return writeEmptyState(doc, "Nenhum produto encontrado para os filtros selecionados.");
+  const grouped = new Map();
+  products.forEach((product) => {
+    if (!grouped.has(product.sector)) grouped.set(product.sector, []);
+    grouped.get(product.sector).push(product);
+  });
+  grouped.forEach((items, sector) => {
+    writeSectionTitle(doc, `Categoria: ${sector}`);
+    writeTable(doc, [
+      { key: "name", label: "PRODUTO", width: 235 },
+      { key: "unit", label: "UN.", width: 65, align: "center" },
+      { key: "qty", label: "ESTOQUE ATUAL", width: 100, align: "right", bold: true },
+      { key: "minQty", label: "MÍNIMO", width: 75, align: "right" },
+      { key: "status", label: "SITUAÇÃO", width: 80, align: "center", bold: true, color: stockStatusColor }
+    ], items.map((product) => ({ ...product, status: getStockAlert(product) })));
+  });
+}
+
+function writeEntriesReport(doc, entries) {
+  if (entries.length === 0) return writeEmptyState(doc, "Nenhuma entrada encontrada para os filtros selecionados.");
+  writeTable(doc, [
+    { key: "date", label: "DATA", width: 70 },
+    { key: "sector", label: "CATEGORIA", width: 105 },
+    { key: "product", label: "PRODUTO", width: 180 },
+    { key: "unit", label: "UN.", width: 55, align: "center" },
+    { key: "qty", label: "QUANTIDADE", width: 110, align: "right", bold: true }
+  ], entries.map((entry) => ({
+    date: formatDateBR(entry.date),
+    sector: entry.product?.sector || "-",
+    product: entry.product?.name || "-",
+    unit: entry.product?.unit || "-",
+    qty: entry.qty
+  })));
+}
+
+function writeExitsReport(doc, exits) {
+  if (exits.length === 0) return writeEmptyState(doc, "Nenhuma saída encontrada para os filtros selecionados.");
+  writeTable(doc, [
+    { key: "date", label: "DATA", width: 56 },
+    { key: "sector", label: "CATEGORIA", width: 76 },
+    { key: "product", label: "PRODUTO", width: 112 },
+    { key: "unit", label: "UN.", width: 39, align: "center" },
+    { key: "qty", label: "QTD.", width: 45, align: "right", bold: true },
+    { key: "takenBy", label: "RETIRADO POR", width: 90 },
+    { key: "observation", label: "OBSERVAÇÃO", width: 82 }
+  ], exits.map((exitItem) => ({
+    date: formatDateBR(exitItem.date),
+    sector: exitItem.product?.sector || "-",
+    product: exitItem.product?.name || "-",
+    unit: exitItem.product?.unit || "-",
+    qty: exitItem.qty,
+    takenBy: exitItem.takenBy || "-",
+    observation: exitItem.observation || "-"
+  })));
+}
+
+function writeCategorySummaryReport(doc, rows) {
+  if (rows.length === 0) return writeEmptyState(doc, "Nenhuma movimentação encontrada para os filtros selecionados.");
+  const grouped = new Map();
+  rows.forEach((row) => {
+    if (!grouped.has(row.sector)) grouped.set(row.sector, []);
+    grouped.get(row.sector).push(row);
+  });
+  let total = 0;
+  grouped.forEach((items, sector) => {
+    writeSectionTitle(doc, `Categoria: ${sector}`);
+    const subtotal = items.reduce((sum, item) => sum + item.qty, 0);
+    total += subtotal;
+    writeTable(doc, [
+      { key: "product", label: "PRODUTO", width: 320 },
+      { key: "unit", label: "UN.", width: 80, align: "center" },
+      { key: "qty", label: "QUANTIDADE", width: 155, align: "right", bold: true }
+    ], items);
+    doc.fillColor(PDF_COLORS.muted).font("Helvetica-Bold").fontSize(9).text(`Subtotal da categoria: ${subtotal}`, { align: "right" });
+    doc.moveDown(0.6);
+  });
+  doc.fillColor(PDF_COLORS.navy).font("Helvetica-Bold").fontSize(11).text(`TOTAL GERAL: ${total}`, { align: "right" });
+  doc.moveDown(0.5);
+  doc.fillColor(PDF_COLORS.text).font("Helvetica");
+}
+
+function writeStockMonthlyReport(doc, rows) {
+  if (rows.length === 0) return writeEmptyState(doc, "Nenhuma movimentação encontrada para os meses selecionados.");
+  const grouped = new Map();
+  rows.forEach((row) => {
+    if (!grouped.has(row.sector)) grouped.set(row.sector, []);
+    grouped.get(row.sector).push(row);
+  });
+  let totalIn = 0;
+  let totalOut = 0;
+  let totalNet = 0;
+  grouped.forEach((items, sector) => {
+    writeSectionTitle(doc, `Categoria: ${sector}`);
+    const subtotalIn = items.reduce((sum, item) => sum + item.inQty, 0);
+    const subtotalOut = items.reduce((sum, item) => sum + item.outQty, 0);
+    const subtotalNet = items.reduce((sum, item) => sum + item.netQty, 0);
+    totalIn += subtotalIn;
+    totalOut += subtotalOut;
+    totalNet += subtotalNet;
+    writeTable(doc, [
+      { key: "name", label: "PRODUTO", width: 230 },
+      { key: "unit", label: "UN.", width: 65, align: "center" },
+      { key: "inQty", label: "ENTRADAS", width: 90, align: "right" },
+      { key: "outQty", label: "SAÍDAS", width: 80, align: "right" },
+      { key: "netQty", label: "SALDO", width: 90, align: "right", bold: true }
+    ], items.sort((a, b) => a.name.localeCompare(b.name)));
+    doc.fillColor(PDF_COLORS.muted).font("Helvetica-Bold").fontSize(9)
+      .text(`Subtotal: Entradas ${subtotalIn}  |  Saídas ${subtotalOut}  |  Saldo ${subtotalNet}`, { align: "right" });
+    doc.moveDown(0.6);
+  });
+  doc.fillColor(PDF_COLORS.navy).font("Helvetica-Bold").fontSize(11)
+    .text(`TOTAL GERAL: Entradas ${totalIn}  |  Saídas ${totalOut}  |  Saldo ${totalNet}`, { align: "right" });
+  doc.moveDown(0.5);
+  doc.fillColor(PDF_COLORS.text).font("Helvetica");
+}
+
 async function getPeriodMovements(Model, baseFilter, monthsFilter) {
   let movements = await Model.find(baseFilter).populate("product").sort({ date: -1 }).lean();
   if (monthsFilter) {
@@ -265,7 +499,10 @@ router.get("/stock.pdf", requireAuth, requireAdmin, asyncHandler(async (req, res
 
   const products = filterProducts(await Product.find().sort({ sector: 1, name: 1 }).lean(), filters);
   setPdfHeaders(res, "estoque.pdf");
-  const doc = createPdf(res);
+  const doc = createPdf(res, {
+    title: monthsFilter ? "Relatório de estoque consolidado por meses" : "Relatório de estoque atual",
+    subtitle: monthsFilter ? `Período: ${formatMonthsFilterLabel(monthsFilter)}  |  ${formatProductFilters(filters)}` : formatProductFilters(filters)
+  });
 
   auditLog(req, "report.stock.pdf", {
     sector: filters.sector || "all",
@@ -275,23 +512,17 @@ router.get("/stock.pdf", requireAuth, requireAdmin, asyncHandler(async (req, res
   });
 
   if (!monthsFilter) {
-    doc.fontSize(16).text("Relat\u00F3rio de Estoque", { align: "center" });
-    doc.moveDown();
-    writeStockSnapshot(doc, products);
+    writeStockReport(doc, products);
   } else {
-    doc.fontSize(16).text("Relat\u00F3rio de Estoque (Consolidado por Meses)", { align: "center" });
-    doc.fontSize(10).text(`Per\u00EDodo: ${formatMonthsFilterLabel(monthsFilter)}`, { align: "center" });
-    doc.moveDown();
-
     const range = getMonthsUtcRange(monthsFilter);
     const [entries, exits] = await Promise.all([
       Entry.find({ date: range }).lean(),
       Exit.find({ date: range }).lean()
     ]);
-    writeStockMonthlySummary(doc, buildStockMovementRows(products, entries, exits, monthsFilter));
+    writeStockMonthlyReport(doc, buildStockMovementRows(products, entries, exits, monthsFilter));
   }
 
-  doc.end();
+  finalizePdf(doc);
 }));
 
 router.get("/entries.pdf", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
@@ -314,7 +545,10 @@ router.get("/entries.pdf", requireAuth, requireAdmin, asyncHandler(async (req, r
   const { startDate, endDate } = req.query;
 
   setPdfHeaders(res, "entradas.pdf");
-  const doc = createPdf(res);
+  const periodLabel = monthsFilter
+    ? `Período: ${formatMonthsFilterLabel(monthsFilter)}`
+    : startDate && endDate ? `Período: ${formatDateBR(startDate)} a ${formatDateBR(endDate)}` : "Período: Todos os registros";
+  const doc = createPdf(res, { title: "Relatório de entradas", subtitle: `${periodLabel}  |  ${formatProductFilters(productFilters)}` });
   auditLog(req, "report.entries.pdf", {
     startDate: startDate || null,
     endDate: endDate || null,
@@ -325,23 +559,12 @@ router.get("/entries.pdf", requireAuth, requireAdmin, asyncHandler(async (req, r
   });
 
   if (!monthsFilter) {
-    doc.fontSize(16).text("Relat\u00F3rio de Entradas", { align: "center" });
+    writeEntriesReport(doc, entries);
   } else {
-    doc.fontSize(16).text("Relat\u00F3rio de Entradas (Consolidado por Meses)", { align: "center" });
-    doc.fontSize(10).text(`Per\u00EDodo: ${formatMonthsFilterLabel(monthsFilter)}`, { align: "center" });
-  }
-  if (!monthsFilter && startDate && endDate) {
-    doc.fontSize(10).text(`Per\u00EDodo: ${formatDateBR(startDate)} a ${formatDateBR(endDate)}`, { align: "center" });
-  }
-  doc.moveDown(0.5);
-
-  if (!monthsFilter) {
-    writeEntriesTable(doc, entries);
-  } else {
-    renderCategorySummary(doc, buildCategoryAggregateRows(entries));
+    writeCategorySummaryReport(doc, buildCategoryAggregateRows(entries));
   }
 
-  doc.end();
+  finalizePdf(doc);
 }));
 
 router.get("/exits.pdf", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
@@ -364,7 +587,10 @@ router.get("/exits.pdf", requireAuth, requireAdmin, asyncHandler(async (req, res
   const { startDate, endDate } = req.query;
 
   setPdfHeaders(res, "saidas.pdf");
-  const doc = createPdf(res);
+  const periodLabel = monthsFilter
+    ? `Período: ${formatMonthsFilterLabel(monthsFilter)}`
+    : startDate && endDate ? `Período: ${formatDateBR(startDate)} a ${formatDateBR(endDate)}` : "Período: Todos os registros";
+  const doc = createPdf(res, { title: "Relatório de saídas", subtitle: `${periodLabel}  |  ${formatProductFilters(productFilters)}` });
   auditLog(req, "report.exits.pdf", {
     startDate: startDate || null,
     endDate: endDate || null,
@@ -375,23 +601,12 @@ router.get("/exits.pdf", requireAuth, requireAdmin, asyncHandler(async (req, res
   });
 
   if (!monthsFilter) {
-    doc.fontSize(16).text("Relat\u00F3rio de Sa\u00EDdas", { align: "center" });
+    writeExitsReport(doc, exits);
   } else {
-    doc.fontSize(16).text("Relat\u00F3rio de Sa\u00EDdas (Consolidado por Meses)", { align: "center" });
-    doc.fontSize(10).text(`Per\u00EDodo: ${formatMonthsFilterLabel(monthsFilter)}`, { align: "center" });
-  }
-  if (!monthsFilter && startDate && endDate) {
-    doc.fontSize(10).text(`Per\u00EDodo: ${formatDateBR(startDate)} a ${formatDateBR(endDate)}`, { align: "center" });
-  }
-  doc.moveDown(0.5);
-
-  if (!monthsFilter) {
-    writeExitsTable(doc, exits);
-  } else {
-    renderCategorySummary(doc, buildCategoryAggregateRows(exits));
+    writeCategorySummaryReport(doc, buildCategoryAggregateRows(exits));
   }
 
-  doc.end();
+  finalizePdf(doc);
 }));
 
 router.get("/entries.csv", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
@@ -438,7 +653,10 @@ router.__testables = {
   formatMonthsFilterLabel,
   isNearRestock,
   matchesStockStatus,
-  getProductFiltersFromQuery
+  getProductFiltersFromQuery,
+  createPdf,
+  finalizePdf,
+  writeStockReport
 };
 
 module.exports = router;
