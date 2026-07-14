@@ -27,6 +27,52 @@ const {
 } = require("../utils/report-data");
 
 const router = express.Router();
+const PRODUCT_SECTORS = ["Expediente", "Escritorio", "Limpeza", "Copa"];
+const STOCK_STATUS_OPTIONS = ["all", "restock", "near", "attention"];
+
+function isNearRestock(product) {
+  const nearLimit = product.minQty + Math.max(1, Math.ceil(product.minQty * 0.2));
+  return product.qty > product.minQty && product.qty <= nearLimit;
+}
+
+function matchesStockStatus(product, stockStatus) {
+  const needsRestock = product.qty <= product.minQty;
+  if (stockStatus === "restock") return needsRestock;
+  if (stockStatus === "near") return isNearRestock(product);
+  if (stockStatus === "attention") return needsRestock || isNearRestock(product);
+  return true;
+}
+
+function getProductFiltersFromQuery(req, res) {
+  const sector = sanitizeText(req.query?.sector || "", 20);
+  const stockStatus = sanitizeText(req.query?.stockStatus || "all", 20).toLowerCase();
+
+  if (sector && !PRODUCT_SECTORS.includes(sector)) {
+    res.status(400).json({ error: "Categoria invalida" });
+    return null;
+  }
+  if (!STOCK_STATUS_OPTIONS.includes(stockStatus)) {
+    res.status(400).json({ error: "Situacao do estoque invalida" });
+    return null;
+  }
+
+  return { sector, stockStatus };
+}
+
+function filterProducts(products, filters) {
+  return products.filter((product) =>
+    (!filters.sector || product.sector === filters.sector) && matchesStockStatus(product, filters.stockStatus)
+  );
+}
+
+function filterMovementsByProduct(movements, filters) {
+  return movements.filter(
+    (movement) =>
+      movement.product &&
+      (!filters.sector || movement.product.sector === filters.sector) &&
+      matchesStockStatus(movement.product, filters.stockStatus)
+  );
+}
 
 // Traduz query de datas para filtro Mongo ou devolve erro amigavel na resposta.
 function getDateFilterFromQuery(req, res) {
@@ -124,6 +170,11 @@ function writeExitsTable(doc, exits) {
 }
 
 function writeStockSnapshot(doc, products) {
+  if (products.length === 0) {
+    doc.text("Nenhum produto encontrado para os filtros selecionados.");
+    return;
+  }
+
   let currentSector = null;
   doc.fontSize(11);
 
@@ -134,7 +185,7 @@ function writeStockSnapshot(doc, products) {
       doc.fontSize(13).text(`Categoria: ${currentSector}`);
       doc.fontSize(11);
     }
-    const alert = product.qty <= product.minQty ? "REPOR" : "OK";
+    const alert = product.qty <= product.minQty ? "REPOR" : isNearRestock(product) ? "PERTO DE REPOR" : "OK";
     doc.text(`${product.name} (${product.unit}) | Qtd: ${product.qty} | Min: ${product.minQty} | ${alert}`);
   });
 }
@@ -194,30 +245,31 @@ async function getPeriodMovements(Model, baseFilter, monthsFilter) {
 }
 
 router.get("/stock.csv", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
-  const sector = sanitizeText(req.query?.sector || "", 20);
-  const filter = sector ? { sector } : {};
-  const products = await Product.find(filter).sort({ sector: 1, name: 1 }).lean();
+  const filters = getProductFiltersFromQuery(req, res);
+  if (!filters) return;
+  const products = filterProducts(await Product.find().sort({ sector: 1, name: 1 }).lean(), filters);
   const csv = new Parser({ fields: ["sector", "name", "unit", "qty", "minQty", "needsRestock"] }).parse(
     buildStockCsvRows(products)
   );
 
   setCsvHeaders(res, "estoque.csv");
-  auditLog(req, "report.stock.csv", { sector: sector || "all" });
+  auditLog(req, "report.stock.csv", { sector: filters.sector || "all", stockStatus: filters.stockStatus });
   res.send(csv);
 }));
 
 router.get("/stock.pdf", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
-  const sector = sanitizeText(req.query?.sector || "", 20);
-  const filter = sector ? { sector } : {};
+  const filters = getProductFiltersFromQuery(req, res);
+  if (!filters) return;
   const monthsFilter = parseMonthsFilterFromQuery(req, res);
   if (monthsFilter === false) return;
 
-  const products = await Product.find(filter).sort({ sector: 1, name: 1 }).lean();
+  const products = filterProducts(await Product.find().sort({ sector: 1, name: 1 }).lean(), filters);
   setPdfHeaders(res, "estoque.pdf");
   const doc = createPdf(res);
 
   auditLog(req, "report.stock.pdf", {
-    sector: sector || "all",
+    sector: filters.sector || "all",
+    stockStatus: filters.stockStatus,
     months: monthsFilter ? monthsFilter.months : null,
     year: monthsFilter ? monthsFilter.year : null
   });
@@ -243,6 +295,8 @@ router.get("/stock.pdf", requireAuth, requireAdmin, asyncHandler(async (req, res
 }));
 
 router.get("/entries.pdf", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+  const productFilters = getProductFiltersFromQuery(req, res);
+  if (!productFilters) return;
   const monthsFilter = parseMonthsFilterFromQuery(req, res);
   if (monthsFilter === false) return;
   if (monthsFilter && (req.query?.startDate || req.query?.endDate)) {
@@ -253,7 +307,10 @@ router.get("/entries.pdf", requireAuth, requireAdmin, asyncHandler(async (req, r
   if (filter === null) return;
 
   const baseFilter = monthsFilter ? { date: getMonthsUtcRange(monthsFilter) } : filter;
-  const entries = await getPeriodMovements(Entry, baseFilter, monthsFilter);
+  const entries = filterMovementsByProduct(
+    await getPeriodMovements(Entry, baseFilter, monthsFilter),
+    productFilters
+  );
   const { startDate, endDate } = req.query;
 
   setPdfHeaders(res, "entradas.pdf");
@@ -261,6 +318,8 @@ router.get("/entries.pdf", requireAuth, requireAdmin, asyncHandler(async (req, r
   auditLog(req, "report.entries.pdf", {
     startDate: startDate || null,
     endDate: endDate || null,
+    sector: productFilters.sector || "all",
+    stockStatus: productFilters.stockStatus,
     months: monthsFilter ? monthsFilter.months : null,
     year: monthsFilter ? monthsFilter.year : null
   });
@@ -286,6 +345,8 @@ router.get("/entries.pdf", requireAuth, requireAdmin, asyncHandler(async (req, r
 }));
 
 router.get("/exits.pdf", requireAuth, requireAdmin, asyncHandler(async (req, res) => {
+  const productFilters = getProductFiltersFromQuery(req, res);
+  if (!productFilters) return;
   const monthsFilter = parseMonthsFilterFromQuery(req, res);
   if (monthsFilter === false) return;
   if (monthsFilter && (req.query?.startDate || req.query?.endDate)) {
@@ -296,7 +357,10 @@ router.get("/exits.pdf", requireAuth, requireAdmin, asyncHandler(async (req, res
   if (filter === null) return;
 
   const baseFilter = monthsFilter ? { date: getMonthsUtcRange(monthsFilter) } : filter;
-  const exits = await getPeriodMovements(Exit, baseFilter, monthsFilter);
+  const exits = filterMovementsByProduct(
+    await getPeriodMovements(Exit, baseFilter, monthsFilter),
+    productFilters
+  );
   const { startDate, endDate } = req.query;
 
   setPdfHeaders(res, "saidas.pdf");
@@ -304,6 +368,8 @@ router.get("/exits.pdf", requireAuth, requireAdmin, asyncHandler(async (req, res
   auditLog(req, "report.exits.pdf", {
     startDate: startDate || null,
     endDate: endDate || null,
+    sector: productFilters.sector || "all",
+    stockStatus: productFilters.stockStatus,
     months: monthsFilter ? monthsFilter.months : null,
     year: monthsFilter ? monthsFilter.year : null
   });
@@ -369,7 +435,10 @@ router.__testables = {
   parseMonthsFilterFromQuery,
   getMonthsUtcRange,
   isDateInMonthsFilter,
-  formatMonthsFilterLabel
+  formatMonthsFilterLabel,
+  isNearRestock,
+  matchesStockStatus,
+  getProductFiltersFromQuery
 };
 
 module.exports = router;

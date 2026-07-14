@@ -8,7 +8,10 @@ const {
   getUtcRangeFromDateStrings,
   getDateFilterFromQuery,
   parseMonthsFilterFromQuery,
-  formatMonthsFilterLabel
+  formatMonthsFilterLabel,
+  isNearRestock,
+  matchesStockStatus,
+  getProductFiltersFromQuery
 } = reportsRouter.__testables;
 
 function createRes() {
@@ -60,4 +63,24 @@ test("parseMonthsFilterFromQuery aceita meses validos", () => {
 test("formatMonthsFilterLabel gera rotulo amigavel", () => {
   const label = formatMonthsFilterLabel({ year: 2026, months: [1, 2, 3] });
   assert.equal(label, "Janeiro, Fevereiro, Março / 2026");
+});
+
+test("isNearRestock usa margem de vinte por cento acima do minimo", () => {
+  assert.equal(isNearRestock({ qty: 10, minQty: 10 }), false);
+  assert.equal(isNearRestock({ qty: 12, minQty: 10 }), true);
+  assert.equal(isNearRestock({ qty: 13, minQty: 10 }), false);
+});
+
+test("matchesStockStatus separa reposicao, proximidade e atencao", () => {
+  assert.equal(matchesStockStatus({ qty: 5, minQty: 5 }, "restock"), true);
+  assert.equal(matchesStockStatus({ qty: 6, minQty: 5 }, "near"), true);
+  assert.equal(matchesStockStatus({ qty: 6, minQty: 5 }, "attention"), true);
+  assert.equal(matchesStockStatus({ qty: 8, minQty: 5 }, "attention"), false);
+});
+
+test("getProductFiltersFromQuery rejeita categoria desconhecida", () => {
+  const res = createRes();
+  const result = getProductFiltersFromQuery({ query: { sector: "Outra" } }, res);
+  assert.equal(result, null);
+  assert.equal(res.statusCode, 400);
 });

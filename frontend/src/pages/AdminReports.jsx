@@ -16,6 +16,8 @@ const MONTH_OPTIONS = [
   { value: 12, label: "Dezembro" }
 ];
 
+const CATEGORY_OPTIONS = ["Expediente", "Escritorio", "Limpeza", "Copa"];
+
 // Exibe datas no formato brasileiro de forma previsivel.
 function formatDateBR(date) {
   return new Date(date).toLocaleDateString("pt-BR", { timeZone: "UTC" });
@@ -28,6 +30,8 @@ export default function AdminReports() {
   const [dates, setDates] = useState({ startDate: "", endDate: "" });
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [months, setMonths] = useState([]);
+  const [category, setCategory] = useState("");
+  const [stockStatus, setStockStatus] = useState("all");
 
   // Marca ou desmarca um mes dentro da selecao manual.
   function toggleMonth(monthValue) {
@@ -45,10 +49,12 @@ export default function AdminReports() {
   async function dl(path, filename) {
     setError("");
     try {
-      let fullPath = path;
+      const query = new URLSearchParams();
+      if (category) query.set("sector", category);
+      if (stockStatus !== "all") query.set("stockStatus", stockStatus);
       if (mode === "date" && dates.startDate && dates.endDate) {
-        const separator = path.includes("?") ? "&" : "?";
-        fullPath = `${path}${separator}startDate=${encodeURIComponent(dates.startDate)}&endDate=${encodeURIComponent(dates.endDate)}`;
+        query.set("startDate", dates.startDate);
+        query.set("endDate", dates.endDate);
       } else if (mode === "months") {
         const normalizedYear = Number(year);
         if (!Number.isInteger(normalizedYear) || normalizedYear < 2000 || normalizedYear > 2100) {
@@ -57,9 +63,10 @@ export default function AdminReports() {
         if (months.length === 0) {
           throw new Error("Selecione ao menos um mes");
         }
-        const separator = path.includes("?") ? "&" : "?";
-        fullPath = `${path}${separator}year=${encodeURIComponent(String(normalizedYear))}&months=${encodeURIComponent(months.join(","))}`;
+        query.set("year", String(normalizedYear));
+        query.set("months", months.join(","));
       }
+      const fullPath = `${path}${query.toString() ? `?${query.toString()}` : ""}`;
       await downloadFile(fullPath, filename);
     } catch (e) {
       setError(e.message);
@@ -82,6 +89,25 @@ export default function AdminReports() {
           </div>
 
           <div style={{ display: "grid", gap: 10, marginBottom: 14 }}>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 180 }}>
+                <label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: 4 }}>Categoria</label>
+                <select value={category} onChange={(e) => setCategory(e.target.value)} style={{ width: "100%" }}>
+                  <option value="">Todas as categorias</option>
+                  {CATEGORY_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                </select>
+              </div>
+              <div style={{ flex: 1, minWidth: 210 }}>
+                <label style={{ display: "block", fontSize: "12px", color: "var(--muted)", marginBottom: 4 }}>Situacao do estoque</label>
+                <select value={stockStatus} onChange={(e) => setStockStatus(e.target.value)} style={{ width: "100%" }}>
+                  <option value="all">Todos os produtos</option>
+                  <option value="restock">Somente para repor</option>
+                  <option value="near">Somente perto de repor</option>
+                  <option value="attention">Para repor ou perto de repor</option>
+                </select>
+              </div>
+            </div>
+
             {mode === "date" ? (
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
                 <div style={{ flex: 1, minWidth: 160 }}>
@@ -159,6 +185,9 @@ export default function AdminReports() {
           <h3 style={{ marginTop: 0 }}>Resumo</h3>
           <p className="small" style={{ marginTop: 0 }}>
             No modo <b>Por meses</b>, os relatorios de estoque, entradas e saidas saem consolidados por produto.
+          </p>
+          <p className="small" style={{ marginTop: 0 }}>
+            Os filtros de categoria e situacao valem para todos os PDFs. “Perto de repor” considera ate 20% acima do estoque minimo.
           </p>
           <p className="small" style={{ marginTop: 0 }}>
             Exemplo: selecionando Janeiro, Fevereiro e Marco, o PDF mostra a soma total movimentada nesses meses.
