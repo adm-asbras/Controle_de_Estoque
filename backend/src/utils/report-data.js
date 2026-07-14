@@ -39,7 +39,8 @@ function buildStockMovementRows(products, entries, exits, monthsFilter) {
         unit: product.unit,
         inQty,
         outQty,
-        netQty: inQty - outQty
+        netQty: inQty - outQty,
+        idealQty: product.idealQty ?? product.minQty
       };
     })
     .filter((row) => row.inQty > 0 || row.outQty > 0);

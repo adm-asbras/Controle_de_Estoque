@@ -10,6 +10,7 @@ const { requireAuth, requireAdmin } = require("../middleware/auth");
 const { auditLog } = require("../utils/audit");
 const { asyncHandler } = require("../utils/async-handler");
 const { sanitizeText } = require("../utils/validation");
+const { calculateIdealQty } = require("../utils/stock-target");
 const {
   parseDateOnly,
   getUtcRangeFromDateStrings,
@@ -94,6 +95,22 @@ function formatProductFilters(filters) {
     attention: "Para repor ou perto de repor"
   };
   return `Categoria: ${filters.sector || "Todas"}  |  Estoque: ${statusLabels[filters.stockStatus]}`;
+}
+
+async function addIdealQuantities(products) {
+  const horizonDays = 60;
+  const coverageDays = 30;
+  const startDate = new Date(Date.now() - horizonDays * 24 * 60 * 60 * 1000);
+  const exits = await Exit.aggregate([
+    { $match: { date: { $gte: startDate } } },
+    { $group: { _id: "$product", totalQty: { $sum: "$qty" } } }
+  ]);
+  const consumptionByProductId = new Map(exits.map((item) => [String(item._id), item.totalQty]));
+
+  return products.map((product) => ({
+    ...product,
+    idealQty: calculateIdealQty(product, consumptionByProductId.get(String(product._id)) || 0, horizonDays, coverageDays)
+  }));
 }
 
 // Traduz query de datas para filtro Mongo ou devolve erro amigavel na resposta.
@@ -363,11 +380,12 @@ function writeStockReport(doc, products) {
   grouped.forEach((items, sector) => {
     writeSectionTitle(doc, `Categoria: ${sector}`);
     writeTable(doc, [
-      { key: "name", label: "PRODUTO", width: 235 },
-      { key: "unit", label: "UN.", width: 65, align: "center" },
-      { key: "qty", label: "ESTOQUE ATUAL", width: 100, align: "right", bold: true },
-      { key: "minQty", label: "MÍNIMO", width: 75, align: "right" },
-      { key: "status", label: "SITUAÇÃO", width: 80, align: "center", bold: true, color: stockStatusColor }
+      { key: "name", label: "PRODUTO", width: 190 },
+      { key: "unit", label: "UN.", width: 50, align: "center" },
+      { key: "qty", label: "ATUAL", width: 70, align: "right", bold: true },
+      { key: "minQty", label: "MÍNIMO", width: 65, align: "right" },
+      { key: "idealQty", label: "IDEAL", width: 75, align: "right", bold: true },
+      { key: "status", label: "SITUAÇÃO", width: 105, align: "center", bold: true, color: stockStatusColor }
     ], items.map((product) => ({ ...product, status: getStockAlert(product) })));
   });
 }
@@ -454,11 +472,12 @@ function writeStockMonthlyReport(doc, rows) {
     totalOut += subtotalOut;
     totalNet += subtotalNet;
     writeTable(doc, [
-      { key: "name", label: "PRODUTO", width: 230 },
-      { key: "unit", label: "UN.", width: 65, align: "center" },
-      { key: "inQty", label: "ENTRADAS", width: 90, align: "right" },
-      { key: "outQty", label: "SAÍDAS", width: 80, align: "right" },
-      { key: "netQty", label: "SALDO", width: 90, align: "right", bold: true }
+      { key: "name", label: "PRODUTO", width: 210 },
+      { key: "unit", label: "UN.", width: 50, align: "center" },
+      { key: "inQty", label: "ENTRADAS", width: 80, align: "right" },
+      { key: "outQty", label: "SAÍDAS", width: 75, align: "right" },
+      { key: "netQty", label: "SALDO", width: 75, align: "right", bold: true },
+      { key: "idealQty", label: "IDEAL", width: 65, align: "right", bold: true }
     ], items.sort((a, b) => a.name.localeCompare(b.name)));
     doc.fillColor(PDF_COLORS.muted).font("Helvetica-Bold").fontSize(9)
       .text(`Subtotal: Entradas ${subtotalIn}  |  Saídas ${subtotalOut}  |  Saldo ${subtotalNet}`, { align: "right" });
@@ -498,10 +517,11 @@ router.get("/stock.pdf", requireAuth, requireAdmin, asyncHandler(async (req, res
   if (monthsFilter === false) return;
 
   const products = filterProducts(await Product.find().sort({ sector: 1, name: 1 }).lean(), filters);
+  const productsWithIdealQty = await addIdealQuantities(products);
   setPdfHeaders(res, "estoque.pdf");
   const doc = createPdf(res, {
     title: monthsFilter ? "Relatório de estoque consolidado por meses" : "Relatório de estoque atual",
-    subtitle: monthsFilter ? `Período: ${formatMonthsFilterLabel(monthsFilter)}  |  ${formatProductFilters(filters)}` : formatProductFilters(filters)
+    subtitle: monthsFilter ? `Período: ${formatMonthsFilterLabel(monthsFilter)}  |  ${formatProductFilters(filters)}` : `${formatProductFilters(filters)}  |  Ideal: cobertura para 30 dias`
   });
 
   auditLog(req, "report.stock.pdf", {
@@ -512,14 +532,14 @@ router.get("/stock.pdf", requireAuth, requireAdmin, asyncHandler(async (req, res
   });
 
   if (!monthsFilter) {
-    writeStockReport(doc, products);
+    writeStockReport(doc, productsWithIdealQty);
   } else {
     const range = getMonthsUtcRange(monthsFilter);
     const [entries, exits] = await Promise.all([
       Entry.find({ date: range }).lean(),
       Exit.find({ date: range }).lean()
     ]);
-    writeStockMonthlyReport(doc, buildStockMovementRows(products, entries, exits, monthsFilter));
+    writeStockMonthlyReport(doc, buildStockMovementRows(productsWithIdealQty, entries, exits, monthsFilter));
   }
 
   finalizePdf(doc);
@@ -656,7 +676,8 @@ router.__testables = {
   getProductFiltersFromQuery,
   createPdf,
   finalizePdf,
-  writeStockReport
+  writeStockReport,
+  addIdealQuantities
 };
 
 module.exports = router;

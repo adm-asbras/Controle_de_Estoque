@@ -20,7 +20,7 @@ test("relatorio em PDF inclui layout institucional e logo", async () => {
     title: "Relatório de estoque atual",
     subtitle: "Categoria: Todas  |  Estoque: Todos os produtos"
   });
-  writeStockReport(doc, [{ name: "Papel A4", sector: "Escritorio", unit: "Pct", qty: 4, minQty: 5 }]);
+  writeStockReport(doc, [{ name: "Papel A4", sector: "Escritorio", unit: "Pct", qty: 4, minQty: 5, idealQty: 8 }]);
   finalizePdf(doc);
 
   await completed;

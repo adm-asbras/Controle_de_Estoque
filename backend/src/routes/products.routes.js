@@ -7,6 +7,7 @@ const { requireAuth, requireAdmin } = require("../middleware/auth");
 const { auditLog } = require("../utils/audit");
 const { asyncHandler } = require("../utils/async-handler");
 const { sanitizeText, validateProductPayload } = require("../utils/validation");
+const { calculateIdealQty } = require("../utils/stock-target");
 
 const router = express.Router();
 
@@ -46,8 +47,7 @@ router.get("/recommendations", requireAuth, requireAdmin, asyncHandler(async (re
     .map((product) => {
       const usage = consumptionByProductId.get(String(product._id)) || { totalQty: 0, movementCount: 0 };
       const avgDailyConsumption = usage.totalQty / horizonDays;
-      const projectedNeed = avgDailyConsumption * coverageDays;
-      const targetStock = Math.max(product.minQty, Math.ceil(projectedNeed + product.minQty));
+      const targetStock = calculateIdealQty(product, usage.totalQty, horizonDays, coverageDays);
       const suggestedQty = Math.max(targetStock - product.qty, 0);
       const daysToStockout = avgDailyConsumption > 0 ? Math.floor(product.qty / avgDailyConsumption) : null;
 
