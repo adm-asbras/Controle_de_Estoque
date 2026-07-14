@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Nav from "./components/Nav";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ThemeToggle from "./components/ThemeToggle";
 
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -19,6 +20,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <div className="app-shell">
+        <ThemeToggle />
         {/* Barra superior fixa para navegacao e sessao. */}
         <Nav />
         <main className="app-main">
