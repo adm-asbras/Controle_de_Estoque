@@ -314,7 +314,8 @@ export default function AdminProducts() {
       )}
 
       <div className="card" style={{ padding: 16, marginTop: 14 }}>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "end" }}>
+        <h3 style={{ marginTop: 0 }}>Produtos cadastrados</h3>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "end", marginBottom: 14 }}>
           <div style={{ flex: 1, minWidth: 240, maxWidth: 560 }}>
             <label htmlFor="product-search" style={{ display: "block", fontWeight: 700, marginBottom: 6 }}>
               🔎 Pesquisar produto
@@ -336,10 +337,6 @@ export default function AdminProducts() {
             {filteredItems.length} produto(s) encontrado(s)
           </div>
         </div>
-      </div>
-
-      <div className="card" style={{ padding: 16, marginTop: 10 }}>
-        <h3 style={{ marginTop: 0 }}>Produtos cadastrados</h3>
         <div className="products-table-scroll">
           <table className="table">
             <thead>
