@@ -314,15 +314,32 @@ export default function AdminProducts() {
       )}
 
       <div className="card" style={{ padding: 16, marginTop: 14 }}>
-        <h3 style={{ marginTop: 0 }}>Produtos cadastrados</h3>
-        <div style={{ marginBottom: 12, maxWidth: 420 }}>
-          <input
-            type="search"
-            placeholder="Pesquisar produto pelo nome"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "end" }}>
+          <div style={{ flex: 1, minWidth: 240, maxWidth: 560 }}>
+            <label htmlFor="product-search" style={{ display: "block", fontWeight: 700, marginBottom: 6 }}>
+              🔎 Pesquisar produto
+            </label>
+            <input
+              id="product-search"
+              type="search"
+              placeholder="Digite o nome do produto que deseja encontrar"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          {search && (
+            <button type="button" className="secondary" onClick={() => setSearch("")}>
+              Limpar busca
+            </button>
+          )}
+          <div className="small" style={{ paddingBottom: 8 }}>
+            {filteredItems.length} produto(s) encontrado(s)
+          </div>
         </div>
+      </div>
+
+      <div className="card" style={{ padding: 16, marginTop: 10 }}>
+        <h3 style={{ marginTop: 0 }}>Produtos cadastrados</h3>
         <div className="products-table-scroll">
           <table className="table">
             <thead>
