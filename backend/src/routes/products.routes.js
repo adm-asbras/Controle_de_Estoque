@@ -47,7 +47,7 @@ router.get("/recommendations", requireAuth, requireAdmin, asyncHandler(async (re
     .map((product) => {
       const usage = consumptionByProductId.get(String(product._id)) || { totalQty: 0, movementCount: 0 };
       const avgDailyConsumption = usage.totalQty / horizonDays;
-      const targetStock = calculateIdealQty(product, usage.totalQty, horizonDays, coverageDays);
+      const targetStock = product.idealQty ?? calculateIdealQty(product, usage.totalQty, horizonDays, coverageDays);
       const suggestedQty = Math.max(targetStock - product.qty, 0);
       const daysToStockout = avgDailyConsumption > 0 ? Math.floor(product.qty / avgDailyConsumption) : null;
 

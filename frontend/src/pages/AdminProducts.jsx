@@ -36,8 +36,10 @@ export default function AdminProducts() {
     name: "",
     sector: SECTORS[0],
     unit: UNITS[0],
-    minQty: 0
+    minQty: 0,
+    idealQty: ""
   });
+  const [search, setSearch] = useState("");
   const [error, setError] = useState("");
   const patchTimersRef = useRef(new Map());
 
@@ -96,9 +98,10 @@ export default function AdminProducts() {
         name: form.name,
         sector: form.sector,
         unit: form.unit,
-        minQty: Number(form.minQty)
+        minQty: Number(form.minQty),
+        ...(form.idealQty === "" ? {} : { idealQty: Number(form.idealQty) })
       });
-      setForm({ name: "", sector: SECTORS[0], unit: UNITS[0], minQty: 0 });
+      setForm({ name: "", sector: SECTORS[0], unit: UNITS[0], minQty: 0, idealQty: "" });
       await load();
       await loadRecommendations();
     } catch (e) {
@@ -150,6 +153,8 @@ export default function AdminProducts() {
   const restockItems = items.filter((p) => p.needsRestock);
   const shouldLoopRestock = restockItems.length > 1;
   const restockTrackItems = shouldLoopRestock ? [...restockItems, ...restockItems] : restockItems;
+  const normalizedSearch = search.trim().toLocaleLowerCase("pt-BR");
+  const filteredItems = items.filter((item) => item.name.toLocaleLowerCase("pt-BR").includes(normalizedSearch));
 
   return (
     <div className="container" style={{ paddingTop: 16, paddingBottom: 16 }}>
@@ -208,11 +213,23 @@ export default function AdminProducts() {
                   onChange={(e) => setForm({ ...form, minQty: e.target.value })}
                 />
               </div>
+              <div style={{ flex: 1, minWidth: "150px", maxWidth: "260px" }}>
+                <div className="small" style={{ marginBottom: 4 }}>
+                  Qtd. ideal
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Automática"
+                  value={form.idealQty}
+                  onChange={(e) => setForm({ ...form, idealQty: e.target.value })}
+                />
+              </div>
             </div>
 
             <button>Criar</button>
             <div className="small">
-              O sistema alerta automaticamente quando <b>Qtd {"<="} Mínimo</b>.
+              O sistema alerta quando <b>Qtd {"<="} Mínimo</b>. Deixe a quantidade ideal vazia para calculá-la pelo consumo.
             </div>
           </form>
         </div>
@@ -298,6 +315,14 @@ export default function AdminProducts() {
 
       <div className="card" style={{ padding: 16, marginTop: 14 }}>
         <h3 style={{ marginTop: 0 }}>Produtos cadastrados</h3>
+        <div style={{ marginBottom: 12, maxWidth: 420 }}>
+          <input
+            type="search"
+            placeholder="Pesquisar produto pelo nome"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
         <div className="products-table-scroll">
           <table className="table">
             <thead>
@@ -307,13 +332,14 @@ export default function AdminProducts() {
                 <th>Unidade</th>
                 <th>Quantidade</th>
                 <th>Mínimo</th>
+                <th>Ideal</th>
                 <th>Status</th>
                 <th>Ações</th>
               </tr>
             </thead>
 
             <tbody>
-              {items.map((p) => (
+              {filteredItems.map((p) => (
                 <tr key={p._id}>
                   <td>
                     <input value={p.name} onChange={(e) => patch(p._id, "name", e.target.value)} />
@@ -355,6 +381,16 @@ export default function AdminProducts() {
                     />
                   </td>
 
+                  <td>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="Auto"
+                      value={p.idealQty ?? ""}
+                      onChange={(e) => patch(p._id, "idealQty", e.target.value === "" ? null : Number(e.target.value))}
+                    />
+                  </td>
+
                   <td>{p.needsRestock ? <span className="badge danger">REPOR</span> : <span className="badge ok">OK</span>}</td>
 
                   <td>
@@ -369,6 +405,11 @@ export default function AdminProducts() {
                   </td>
                 </tr>
               ))}
+              {filteredItems.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="small">Nenhum produto encontrado.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

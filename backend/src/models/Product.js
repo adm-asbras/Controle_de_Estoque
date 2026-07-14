@@ -20,6 +20,7 @@ const ProductSchema = new mongoose.Schema(
     },
     // Quantidade minima para alerta de reposicao.
     minQty: { type: Number, required: true, min: 0 },
+    idealQty: { type: Number, min: 0, default: null },
     // Quantidade atual em estoque.
     qty: { type: Number, required: true, min: 0, default: 0 }
   },

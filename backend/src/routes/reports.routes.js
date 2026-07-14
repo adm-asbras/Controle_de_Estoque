@@ -109,7 +109,7 @@ async function addIdealQuantities(products) {
 
   return products.map((product) => ({
     ...product,
-    idealQty: calculateIdealQty(product, consumptionByProductId.get(String(product._id)) || 0, horizonDays, coverageDays)
+    idealQty: product.idealQty ?? calculateIdealQty(product, consumptionByProductId.get(String(product._id)) || 0, horizonDays, coverageDays)
   }));
 }
 
@@ -179,10 +179,10 @@ function finalizePdf(doc) {
   for (let index = start; index < start + count; index += 1) {
     doc.switchToPage(index);
     doc.save();
-    doc.strokeColor(PDF_COLORS.border).moveTo(40, doc.page.height - 46).lineTo(doc.page.width - 40, doc.page.height - 46).stroke();
+    doc.strokeColor(PDF_COLORS.border).moveTo(40, doc.page.height - 70).lineTo(doc.page.width - 40, doc.page.height - 70).stroke();
     doc.fillColor(PDF_COLORS.muted).font("Helvetica").fontSize(8);
-    doc.text("ASBRAS • Sistema de controle de material", 40, doc.page.height - 36);
-    doc.text(`Página ${index + 1} de ${count}`, doc.page.width - 130, doc.page.height - 36, { width: 90, align: "right" });
+    doc.text("ASBRAS • Sistema de controle de material", 40, doc.page.height - 58, { lineBreak: false });
+    doc.text(`Página ${index + 1} de ${count}`, doc.page.width - 130, doc.page.height - 58, { width: 90, align: "right", lineBreak: false });
     doc.restore();
   }
   doc.end();

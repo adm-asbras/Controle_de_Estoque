@@ -20,6 +20,10 @@ test("relatorio em PDF inclui layout institucional e logo", async () => {
     title: "Relatório de estoque atual",
     subtitle: "Categoria: Todas  |  Estoque: Todos os produtos"
   });
+  let extraPages = 0;
+  doc.on("pageAdded", () => {
+    extraPages += 1;
+  });
   writeStockReport(doc, [{ name: "Papel A4", sector: "Escritorio", unit: "Pct", qty: 4, minQty: 5, idealQty: 8 }]);
   finalizePdf(doc);
 
@@ -27,4 +31,5 @@ test("relatorio em PDF inclui layout institucional e logo", async () => {
   const pdf = Buffer.concat(chunks);
   assert.equal(pdf.subarray(0, 4).toString(), "%PDF");
   assert.ok(pdf.length > 5000);
+  assert.equal(extraPages, 0);
 });

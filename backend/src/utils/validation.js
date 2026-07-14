@@ -95,6 +95,7 @@ const unitSchema = z
   .refine((value) => ALLOWED_UNITS.has(value), { message: "Unidade inválida." });
 
 const minQtySchema = buildParsedSchema(parseNonNegativeInt, "Quantidade mínima inválida.");
+const idealQtySchema = buildParsedSchema(parseNonNegativeInt, "Quantidade ideal inválida.");
 const qtySchema = buildParsedSchema(parseNonNegativeInt, "Quantidade inválida.");
 
 const movementSchema = z.object({
@@ -143,6 +144,14 @@ function validateProductPayload(body, { partial = false } = {}) {
     const result = minQtySchema.safeParse(safeBody.minQty);
     if (!result.success) return { ok: false, error: getSchemaErrorMessage(result, "Quantidade mínima inválida.") };
     patch.minQty = result.data;
+  }
+
+  if (safeBody.idealQty === null && partial) {
+    patch.idealQty = null;
+  } else if (safeBody.idealQty != null) {
+    const result = idealQtySchema.safeParse(safeBody.idealQty);
+    if (!result.success) return { ok: false, error: getSchemaErrorMessage(result, "Quantidade ideal inválida.") };
+    patch.idealQty = result.data;
   }
 
   if (safeBody.qty != null) {

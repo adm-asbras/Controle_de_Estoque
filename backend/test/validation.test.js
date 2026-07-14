@@ -49,3 +49,19 @@ test("validateProductPayload normaliza setor com acento", () => {
   assert.equal(result.patch.sector, "Escritorio");
 });
 
+test("validateProductPayload aceita quantidade ideal e permite removê-la", () => {
+  const created = validateProductPayload({
+    name: "Caneta",
+    sector: "Escritorio",
+    unit: "Un",
+    minQty: 1,
+    idealQty: 12
+  });
+  const cleared = validateProductPayload({ idealQty: null }, { partial: true });
+
+  assert.equal(created.ok, true);
+  assert.equal(created.patch.idealQty, 12);
+  assert.equal(cleared.ok, true);
+  assert.equal(cleared.patch.idealQty, null);
+});
+
